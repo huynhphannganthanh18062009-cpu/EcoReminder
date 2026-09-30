@@ -1,0 +1,2134 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EcoReminder — Hành động nhỏ, thói quen xanh</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<!-- Các thư viện Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<style>
+:root{
+  --bg:#F6F7F0;
+  --surface:#FFFFFF;
+  --ink:#1D2A20;
+  --ink-soft:#51604F;
+  --line:#DEE4D6;
+  --moss:#2F6B4F;
+  --moss-dark:#1F4C37;
+  --moss-pale:#E4EEE3;
+  --amber:#D9A441;
+  --amber-pale:#F6E7C4;
+  --clay:#B4552F;
+  --clay-pale:#F3DCCB;
+  --sky:#3D7A8C;
+  --radius-s:6px;
+  --radius-m:12px;
+  --radius-l:20px;
+  --font-display:'Fraunces',serif;
+  --font-body:'Inter',sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+body.dark{
+  --bg:#141B15;
+  --surface:#1D251E;
+  --ink:#EAF1E7;
+  --ink-soft:#A9B7A5;
+  --line:#33402F;
+  --moss-pale:#22321F;
+  --amber-pale:#3A311C;
+  --clay-pale:#3A241A;
+}
+h1,h2,h3,h4{font-family:var(--font-display);font-weight:600;margin:0;color:var(--ink);}
+p{margin:0;color:var(--ink-soft);line-height:1.55;}
+button{font-family:var(--font-body);cursor:pointer;}
+input,select,textarea{font-family:var(--font-body);}
+a{color:inherit;}
+.hidden{display:none !important;}
+::selection{background:var(--moss-pale);}
+
+/* ---------- Layout shell ---------- */
+#app{max-width:1180px;margin:0 auto;padding-bottom:88px;min-height:100vh;}
+.topbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:18px 20px 10px;
+}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand-mark{
+  width:38px;height:38px;border-radius:10px;background:var(--moss);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.brand-mark svg{width:20px;height:20px;}
+.brand-name{font-family:var(--font-display);font-size:20px;font-weight:600;letter-spacing:.2px;}
+.topbar-actions{display:flex;gap:8px;align-items:center;}
+.icon-btn{
+  width:38px;height:38px;border-radius:50%;border:1px solid var(--line);
+  background:var(--surface);display:flex;align-items:center;justify-content:center;
+}
+.icon-btn svg{width:18px;height:18px;stroke:var(--ink);}
+
+.view{padding:6px 20px 20px;}
+.view-header{margin-bottom:16px;}
+.view-header h2{font-size:24px;}
+.view-header p{margin-top:4px;font-size:14px;}
+
+/* ---------- Cards ---------- */
+.card{
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-radius:var(--radius-m);
+  padding:18px;
+}
+.card + .card{margin-top:14px;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+@media(max-width:720px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+/* ---------- Buttons ---------- */
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:12px 20px;border-radius:999px;border:none;font-weight:600;font-size:14.5px;
+  transition:transform .12s ease;
+}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--moss);color:#fff;}
+.btn-primary:hover{background:var(--moss-dark);}
+.btn-ghost{background:transparent;color:var(--moss);border:1.5px solid var(--moss);}
+.btn-soft{background:var(--moss-pale);color:var(--moss-dark);}
+.btn-amber{background:var(--amber);color:#3A2A08;}
+.btn-clay{background:var(--clay-pale);color:var(--clay);}
+.btn-block{width:100%;}
+.btn-sm{padding:8px 14px;font-size:13px;border-radius:999px;}
+.btn:disabled{opacity:.45;cursor:not-allowed;}
+
+/* ---------- Bottom nav ---------- */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;
+  background:var(--surface);border-top:1px solid var(--line);
+  display:flex;justify-content:space-around;padding:8px 4px 10px;
+  z-index:40;
+}
+.nav-item{
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:none;border:none;color:var(--ink-soft);font-size:11px;font-weight:600;
+  padding:6px 8px;border-radius:10px;flex:1;max-width:110px;
+}
+.nav-item svg{width:21px;height:21px;stroke:var(--ink-soft);fill:none;}
+.nav-item.active{color:var(--moss);}
+.nav-item.active svg{stroke:var(--moss);}
+@media(min-width:860px){
+  .bottom-nav{
+    position:sticky;top:0;left:auto;right:auto;flex-direction:row;justify-content:flex-start;
+    gap:6px;border-top:none;border-bottom:1px solid var(--line);padding:10px 20px;margin-bottom:6px;
+  }
+  .nav-item{flex-direction:row;max-width:none;flex:none;padding:8px 14px;}
+  #app{padding-bottom:20px;}
+}
+
+/* ---------- Progress ---------- */
+.progress-track{height:8px;border-radius:99px;background:var(--moss-pale);overflow:hidden;}
+.progress-fill{height:100%;background:var(--moss);border-radius:99px;transition:width .4s ease;}
+.progress-track.amber{background:var(--amber-pale);}
+.progress-track.amber .progress-fill{background:var(--amber);}
+
+/* ---------- Onboarding ---------- */
+#onboarding{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:24px;
+}
+.ob-card{max-width:560px;width:100%;}
+.ob-hero{
+  background:linear-gradient(160deg,var(--moss) 0%,var(--moss-dark) 100%);
+  color:#fff;border-radius:var(--radius-l);padding:38px 30px;text-align:left;position:relative;overflow:hidden;
+}
+.ob-hero::after{
+  content:"";position:absolute;right:-40px;bottom:-60px;width:220px;height:220px;
+  border-radius:50%;background:rgba(255,255,255,.08);
+}
+.ob-leaf{font-size:34px;line-height:1;margin-bottom:16px;display:inline-block;}
+.ob-hero h1{color:#fff;font-size:30px;line-height:1.28;max-width:420px;}
+.ob-hero p{color:rgba(255,255,255,.82);margin-top:14px;font-size:15px;max-width:400px;}
+.ob-actions{display:flex;gap:10px;margin-top:26px;}
+.ob-steps{display:flex;flex-direction:column;gap:14px;margin-top:22px;}
+.ob-step{display:flex;gap:14px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius-m);padding:16px;}
+.ob-step-num{
+  width:30px;height:30px;border-radius:50%;background:var(--moss-pale);color:var(--moss-dark);
+  display:flex;align-items:center;justify-content:center;font-weight:700;font-size:14px;flex-shrink:0;
+}
+.field{margin-bottom:16px;}
+.field label{display:block;font-weight:600;font-size:13.5px;margin-bottom:7px;}
+.field input[type=text],.field select,.field textarea{
+  width:100%;padding:11px 13px;border-radius:var(--radius-s);border:1.5px solid var(--line);
+  font-size:14.5px;background:var(--surface);color:var(--ink);
+}
+.chip-grid{display:flex;flex-wrap:wrap;gap:8px;}
+.chip{
+  padding:9px 14px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);
+  font-size:13.5px;font-weight:600;color:var(--ink-soft);
+}
+.chip.selected{border-color:var(--moss);background:var(--moss-pale);color:var(--moss-dark);}
+.chip small{display:block;font-weight:400;color:var(--ink-soft);font-size:11.5px;margin-top:2px;}
+
+/* ---------- Survey ---------- */
+.survey-progress-wrap{padding:14px 20px 0;}
+.survey-progress-label{display:flex;justify-content:space-between;font-size:12.5px;color:var(--ink-soft);margin-bottom:6px;font-weight:600;}
+.likert-q{border-bottom:1px solid var(--line);padding:16px 0;}
+.likert-q:last-child{border-bottom:none;}
+.likert-q p.qtext{color:var(--ink);font-size:14.5px;font-weight:500;margin-bottom:12px;}
+.likert-scale{display:flex;gap:6px;}
+.likert-opt{
+  flex:1;padding:9px 4px;text-align:center;border-radius:var(--radius-s);border:1.5px solid var(--line);
+  font-size:12px;font-weight:600;color:var(--ink-soft);
+}
+.likert-opt .num{display:block;font-family:var(--font-display);font-size:16px;font-weight:600;}
+.likert-opt.selected{background:var(--moss);border-color:var(--moss);color:#fff;}
+.scenario-opt{
+  display:block;width:100%;text-align:left;padding:14px 16px;border-radius:var(--radius-m);
+  border:1.5px solid var(--line);background:var(--surface);margin-bottom:10px;font-size:14px;color:var(--ink);
+}
+.scenario-opt b{color:var(--moss-dark);margin-right:8px;}
+.scenario-opt.selected{border-color:var(--moss);background:var(--moss-pale);}
+.check-list label{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line);font-size:14px;}
+.check-list label:last-child{border-bottom:none;}
+.check-list input{margin-top:3px;}
+.survey-nav{display:flex;gap:10px;justify-content:space-between;padding:18px 0 4px;}
+
+/* ---------- Dashboard ---------- */
+.greet-card{background:linear-gradient(160deg,var(--moss) 0%,var(--moss-dark) 100%);color:#fff;border:none;}
+.greet-card h2{color:#fff;font-size:22px;}
+.greet-card p{color:rgba(255,255,255,.82);margin-top:4px;}
+.stat-row{display:flex;gap:10px;margin-top:18px;}
+.stat-pill{flex:1;background:rgba(255,255,255,.12);border-radius:var(--radius-m);padding:12px;}
+.stat-pill .v{font-family:var(--font-display);font-size:22px;font-weight:600;}
+.stat-pill .l{font-size:11.5px;color:rgba(255,255,255,.78);margin-top:2px;}
+
+.metric-card{text-align:center;}
+.metric-card .big{font-family:var(--font-display);font-size:30px;font-weight:600;}
+.metric-card .lab{font-size:12.5px;color:var(--ink-soft);margin-top:2px;font-weight:600;}
+.gap-pos{color:var(--clay);}
+.gap-neg{color:var(--moss);}
+.gap-neutral{color:var(--sky);}
+
+.section-title{display:flex;align-items:center;justify-content:space-between;margin:22px 0 10px;}
+.section-title h3{font-size:16.5px;}
+.section-title a,.link-btn{font-size:13px;font-weight:600;color:var(--moss);border:none;background:none;}
+
+.task-card{display:flex;gap:12px;align-items:flex-start;padding:14px 0;border-bottom:1px solid var(--line);}
+.task-card:last-child{border-bottom:none;}
+.task-badge{
+  width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  font-size:16px;
+}
+.task-badge.easy{background:var(--moss-pale);}
+.task-badge.medium{background:var(--amber-pale);}
+.task-badge.hard{background:var(--clay-pale);}
+.task-main{flex:1;min-width:0;}
+.task-main h4{font-size:14.5px;font-weight:600;}
+.task-meta{display:flex;gap:8px;margin-top:5px;flex-wrap:wrap;}
+.tag{font-size:11px;font-weight:700;color:var(--ink-soft);background:var(--bg);border:1px solid var(--line);padding:2px 8px;border-radius:99px;}
+.task-actions{display:flex;gap:8px;margin-top:10px;}
+.task-done-badge{font-size:12px;font-weight:700;color:var(--moss);display:flex;align-items:center;gap:5px;}
+.task-done-badge.no{color:var(--clay);}
+
+.barrier-card{display:flex;gap:12px;align-items:center;}
+.barrier-icon{width:40px;height:40px;border-radius:10px;background:var(--clay-pale);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+
+/* ---------- Journal ---------- */
+.journal-entry{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid var(--line);}
+.journal-entry:last-child{border-bottom:none;}
+.journal-date{width:52px;flex-shrink:0;text-align:center;}
+.journal-date .d{font-family:var(--font-display);font-size:19px;font-weight:600;}
+.journal-date .m{font-size:10.5px;color:var(--ink-soft);text-transform:uppercase;font-weight:700;}
+.journal-photo{width:100%;max-width:220px;border-radius:var(--radius-s);margin-top:8px;display:block;}
+
+.tab-pills{display:flex;gap:8px;overflow-x:auto;padding-bottom:2px;margin-bottom:16px;}
+.tab-pill{
+  padding:9px 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);
+  font-size:13px;font-weight:600;color:var(--ink-soft);white-space:nowrap;flex-shrink:0;
+}
+.tab-pill.active{background:var(--moss);color:#fff;border-color:var(--moss);}
+
+/* ---------- Progress tab ---------- */
+.badge-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:12px;}
+.badge-tile{text-align:center;padding:12px 6px;border-radius:var(--radius-m);border:1.5px dashed var(--line);}
+.badge-tile.unlocked{border-style:solid;border-color:var(--amber);background:var(--amber-pale);}
+.badge-tile .em{font-size:26px;}
+.badge-tile .n{font-size:10.5px;font-weight:700;margin-top:5px;color:var(--ink-soft);line-height:1.25;}
+.badge-tile.unlocked .n{color:var(--ink);}
+
+.bar-chart{display:flex;align-items:flex-end;gap:8px;height:120px;padding-top:10px;}
+.bar-chart .col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:6px;}
+.bar-chart .bar{width:100%;background:var(--moss);border-radius:6px 6px 0 0;min-height:3px;}
+.bar-chart .lbl{font-size:10px;color:var(--ink-soft);font-weight:700;}
+
+.hbar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.hbar-label{width:120px;flex-shrink:0;font-size:12.5px;font-weight:600;color:var(--ink-soft);}
+.hbar-track{flex:1;height:10px;border-radius:99px;background:var(--bg);overflow:hidden;}
+.hbar-fill{height:100%;background:var(--clay);border-radius:99px;}
+.hbar-val{width:26px;font-size:12px;font-weight:700;text-align:right;}
+
+.challenge-day{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:700;flex-shrink:0;background:var(--bg);border:1.5px solid var(--line);color:var(--ink-soft);}
+.challenge-day.done{background:var(--moss);color:#fff;border-color:var(--moss);}
+.challenge-day.today{border-color:var(--amber);}
+.challenge-days{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px;}
+
+/* ---------- Knowledge / lessons ---------- */
+.lesson-card{display:flex;gap:12px;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);}
+.lesson-card:last-child{border-bottom:none;}
+.lesson-num{width:34px;height:34px;border-radius:9px;background:var(--moss-pale);color:var(--moss-dark);display:flex;align-items:center;justify-content:center;font-weight:700;font-family:var(--font-display);flex-shrink:0;}
+.lesson-body h4{font-size:14.5px;}
+.lesson-body p{font-size:12.5px;margin-top:2px;}
+.lesson-detail-block{margin-bottom:16px;}
+.lesson-detail-block h4{font-size:13px;text-transform:none;color:var(--moss-dark);margin-bottom:6px;}
+.lesson-detail-block p{font-size:14px;color:var(--ink);}
+.myth-row{display:flex;gap:10px;margin-bottom:8px;font-size:13px;}
+.myth-row .no{color:var(--clay);font-weight:700;flex-shrink:0;width:70px;}
+.myth-row .yes{color:var(--moss-dark);font-weight:700;flex-shrink:0;width:70px;}
+
+/* ---------- Games ---------- */
+.eco-sort-board{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:14px;}
+.sort-bin{border:2px dashed var(--line);border-radius:var(--radius-m);padding:12px;text-align:center;min-height:70px;}
+.sort-bin.target{border-color:var(--moss);}
+.sort-item-pool{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;}
+.sort-item{padding:9px 12px;border-radius:999px;background:var(--amber-pale);border:1.5px solid var(--amber);font-size:13px;font-weight:600;}
+.sort-item.selected{background:var(--amber);color:#3A2A08;}
+.tree-stage{font-size:70px;text-align:center;margin:6px 0;}
+
+/* ---------- Modal / toast ---------- */
+.modal-backdrop{position:fixed;inset:0;background:rgba(20,27,21,.5);display:flex;align-items:flex-end;justify-content:center;z-index:100;}
+@media(min-width:640px){.modal-backdrop{align-items:center;}}
+.modal-sheet{background:var(--surface);border-radius:20px 20px 0 0;max-width:520px;width:100%;padding:22px 20px 26px;max-height:88vh;overflow-y:auto;}
+@media(min-width:640px){.modal-sheet{border-radius:var(--radius-l);}}
+.modal-sheet h3{margin-bottom:14px;}
+.reason-opt{display:block;width:100%;text-align:left;padding:12px 14px;border-radius:var(--radius-s);border:1.5px solid var(--line);margin-bottom:8px;font-size:13.5px;background:var(--surface);}
+.reason-opt.selected{border-color:var(--moss);background:var(--moss-pale);}
+
+.toast-stack{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:200;display:flex;flex-direction:column;gap:8px;width:min(92vw,380px);}
+.toast{background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:var(--radius-m);font-size:13.5px;font-weight:600;box-shadow:0 8px 20px rgba(0,0,0,.18);display:flex;gap:10px;align-items:center;}
+body.dark .toast{background:var(--surface);color:var(--ink);border:1px solid var(--line);}
+
+.empty-state{text-align:center;padding:30px 10px;}
+.empty-state .em{font-size:30px;margin-bottom:8px;}
+.empty-state p{font-size:13.5px;}
+.notice-banner{display:flex;gap:12px;align-items:flex-start;background:var(--amber-pale);border:1px solid var(--amber);border-radius:var(--radius-m);padding:14px;margin-bottom:14px;}
+.notice-banner p{color:var(--ink);font-size:13.5px;}
+
+footer.spec-note{padding:20px;text-align:center;}
+footer.spec-note p{font-size:11.5px;}
+</style>
+</head>
+<body>
+
+<div class="toast-stack" id="toastStack"></div>
+
+<!-- ========== ONBOARDING ========== -->
+<div id="onboarding"></div>
+
+<!-- ========== MAIN APP ========== -->
+<div id="app" class="hidden">
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M12 22V12M12 12C12 7 8 3 3 3c0 5 4 9 9 9zm0 0c0-5 4-9 9-9 0 5-4 9-9 9z"/></svg>
+      </div>
+      <span class="brand-name">EcoReminder</span>
+    </div>
+    <div class="topbar-actions">
+      <button class="icon-btn" id="themeToggle" title="Đổi giao diện">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+      </button>
+      <button class="btn btn-soft btn-sm" onclick="loginWithGoogle()">
+  🔑 Đăng nhập Google
+</button>
+    </div>
+  </div>
+
+  <div style="padding:0 20px;">
+    <div class="bottom-nav" id="topNavDesktop" style="display:none;"></div>
+  </div>
+
+  <div id="viewHome" class="view"></div>
+  <div id="viewTasks" class="view hidden"></div>
+  <div id="viewJournal" class="view hidden"></div>
+  <div id="viewProgress" class="view hidden"></div>
+  <div id="viewProfile" class="view hidden"></div>
+
+  <footer class="spec-note"><p>EcoReminder · bản thử nghiệm · dữ liệu lưu trên trình duyệt của bạn (LocalStorage)</p></footer>
+</div>
+
+<div class="bottom-nav" id="bottomNav"></div>
+<div id="modalRoot"></div>
+
+<script>
+  // Cấu hình Firebase
+const firebaseConfig = {
+    apiKey: "AIzaSyD8pf7nPWKtQ1ouT1DZ8VlD409zfRCuz50",
+    authDomain: "tim-hieu-ve-ecoreminder.firebaseapp.com",
+    projectId: "tim-hieu-ve-ecoreminder",
+    storageBucket: "tim-hieu-ve-ecoreminder.firebasestorage.app",
+    messagingSenderId: "204176166773",
+    appId: "1:204176166773:web:0b1d8d782ebf42c3294d3c",
+    measurementId: "G-7CBSN2H29H"
+  };
+
+
+// Khởi tạo Firebase
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db = firebase.firestore();
+// Biến lưu thông tin người dùng hiện tại
+let currentUser = null;
+
+// Lắng nghe trạng thái đăng nhập (Tự động đăng nhập ẩn danh nếu chưa đăng nhập)
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
+    currentUser = user;
+    console.log("Đã đăng nhập thành công với UID:", user.uid, "Ẩn danh:", user.isAnonymous);
+  } else {
+    // Nếu chưa đăng nhập -> Tự động tạo phiên đăng nhập ẩn danh
+    try {
+      await auth.signInAnonymously();
+    } catch (error) {
+      console.error("Lỗi đăng nhập ẩn danh:", error);
+    }
+  }
+});
+
+// Hàm gọi khi người dùng bấm nút "Đăng nhập bằng Google"
+async function loginWithGoogle() {
+  const provider = new firebase.auth.GoogleAuthProvider();
+  try {
+    // Nếu đang dùng tài khoản ẩn danh, linkWithPopup sẽ nâng cấp tài khoản ẩn danh thành tài khoản Google (giữ nguyên dữ liệu)
+    if (auth.currentUser && auth.currentUser.isAnonymous) {
+      await auth.currentUser.linkWithPopup(provider);
+      toast("Đã liên kết thành công với tài khoản Google!", "🎉");
+    } else {
+      await auth.signInWithPopup(provider);
+      toast("Đăng nhập Google thành công!", "🎉");
+    }
+    if (typeof render === "function") render(); // Cập nhật lại giao diện
+  } catch (error) {
+    console.error("Lỗi đăng nhập Google:", error);
+    toast("Đăng nhập thất bại: " + error.message, "⚠️");
+  }
+}
+/* =========================================================================
+   ECOREMINDER — PROTOTYPE APP
+   Toàn bộ dữ liệu lưu tại LocalStorage. Không có backend thật (đúng tinh
+   thần mục 31: không giả lập chức năng backend không tồn tại).
+   ========================================================================= */
+
+/* ---------------- Storage helpers ---------------- */
+const LS = {
+  get(key, fallback){ try{ const v = localStorage.getItem(key); return v ? JSON.parse(v) : fallback; }catch(e){ return fallback; } },
+  set(key, val){ try{ localStorage.setItem(key, JSON.stringify(val)); return true; }catch(e){ toast('Không thể lưu dữ liệu. Vui lòng thử lại.', '⚠️'); return false; } }
+};
+const KEYS = {
+  profile:'eco_user_profile', surveyInitial:'eco_survey_initial', surveyPost:'eco_survey_post',
+  checkins:'eco_survey_checkins', tasks:'eco_tasks', journal:'eco_journal', points:'eco_points',
+  streak:'eco_streak', badges:'eco_badges', challenges:'eco_challenges', games:'eco_game_state',
+  settings:'eco_settings'
+};
+function uid(){ return Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function daysBetween(a,b){ return Math.round((new Date(b)-new Date(a))/86400000); }
+function fmtDate(iso){ const d=new Date(iso); const months=['Th1','Th2','Th3','Th4','Th5','Th6','Th7','Th8','Th9','Th10','Th11','Th12']; return {d:d.getDate(), m:months[d.getMonth()]}; }
+
+/* ---------------- Global state ---------------- */
+let state = {
+  profile: LS.get(KEYS.profile, null),
+  surveyInitial: LS.get(KEYS.surveyInitial, null),
+  surveyPost: LS.get(KEYS.surveyPost, null),
+  checkins: LS.get(KEYS.checkins, []),
+  tasks: LS.get(KEYS.tasks, {byDate:{}}),
+  journal: LS.get(KEYS.journal, []),
+  points: LS.get(KEYS.points, {total:0, history:[]}),
+  streak: LS.get(KEYS.streak, {current:0, longest:0, lastActiveDate:null}),
+  badges: LS.get(KEYS.badges, []),
+  challenges: LS.get(KEYS.challenges, {active:[], commitments:[]}),
+  games: LS.get(KEYS.games, {growthPoints:0, ecoSortLastReward:null, ecoChoiceLastReward:null, lastQuizDate:null, quizzesToday:0, knowledgeRead:[]}),
+  settings: LS.get(KEYS.settings, {theme:'light', notifEnabled:true, notifTime:'08:00', notifShownDate:null}),
+};
+function persist(part){
+  const map = {profile:KEYS.profile, surveyInitial:KEYS.surveyInitial, surveyPost:KEYS.surveyPost, checkins:KEYS.checkins,
+    tasks:KEYS.tasks, journal:KEYS.journal, points:KEYS.points, streak:KEYS.streak, badges:KEYS.badges,
+    challenges:KEYS.challenges, games:KEYS.games, settings:KEYS.settings};
+  LS.set(map[part], state[part]);
+}
+
+/* ---------------- Toast ---------------- */
+function toast(msg, icon){
+  const stack = document.getElementById('toastStack');
+  const el = document.createElement('div');
+  el.className='toast';
+  el.innerHTML = `<span>${icon||'🌱'}</span><span>${msg}</span>`;
+  stack.appendChild(el);
+  setTimeout(()=>{ el.style.transition='opacity .4s'; el.style.opacity='0'; setTimeout(()=>el.remove(),400); }, 3200);
+}
+
+/* =========================================================================
+   REFERENCE DATA
+   ========================================================================= */
+const GOALS = [
+  {id:'G1', name:'Giảm sử dụng đồ nhựa dùng một lần', desc:'Từ chối túi, ống hút, dụng cụ không cần thiết'},
+  {id:'G2', name:'Nhớ mang bình nước và túi cá nhân', desc:'Nhắc nhở, checklist trước khi ra nhà'},
+  {id:'G3', name:'Xây dựng thói quen xanh hằng ngày', desc:'Nhiệm vụ đa dạng, đều đặn, duy trì Streak'},
+  {id:'G4', name:'Giảm rác thải và tăng tái sử dụng', desc:'Tái sử dụng vật dụng, phân loại rác'},
+  {id:'G5', name:'Tìm hiểu kiến thức môi trường', desc:'Bài kiến thức, quiz, trò chơi học hỏi'},
+  {id:'G6', name:'Duy trì động lực qua thử thách', desc:'Thử thách 7/14/30 ngày, huy hiệu, cấp bậc'},
+];
+const BARRIER_KEYS = ['convenience','forget','bulky','socialFear','experience','peerInfluence','cost','busy','weather','cleaning'];
+const BARRIER_LABEL = {
+  convenience:'Tiện lợi / thói quen cũ', forget:'Hay quên mang vật dụng', bulky:'Cảm thấy bất tiện, cồng kềnh',
+  socialFear:'Ngại từ chối người bán', experience:'Trải nghiệm sản phẩm thay thế chưa tốt',
+  peerInfluence:'Ảnh hưởng từ bạn bè xung quanh', cost:'Rào cản chi phí', busy:'Bận rộn, thiếu thời gian',
+  weather:'Điều kiện hoàn cảnh (thời tiết...)', cleaning:'Ngại vệ sinh / tốn thời gian rửa'
+};
+const BARRIER_SOLUTION = {
+  convenience:'Bắt đầu bằng một lựa chọn thay thế thật đơn giản, không cần thay đổi mọi thứ cùng lúc.',
+  forget:'Đặt Reminder sớm hơn và chuẩn bị checklist "Bình – Túi – Hộp" trước khi ra ngoài.',
+  bulky:'Chọn vật dụng gọn nhẹ và nhiệm vụ tối giản, không cần mang theo quá nhiều thứ.',
+  socialFear:'Thử một câu nói nhẹ nhàng: "Cảm ơn, mình có rồi ạ" — hầu hết người bán đều vui vẻ đồng ý.',
+  experience:'Thử một phương án thay thế khác phù hợp hơn với bạn, không nhất thiết phải dùng đúng loại đầu tiên.',
+  peerInfluence:'Thử thách cùng một người bạn để có thêm động lực và giảm cảm giác lạc lõng.',
+  cost:'Ưu tiên hành động không tốn thêm tiền: tận dụng đồ có sẵn thay vì mua đồ mới.',
+  busy:'Chọn nhiệm vụ dưới 2 phút — không cần chuẩn bị nhiều.',
+  weather:'Nhiệm vụ có thể linh hoạt thay đổi theo thời tiết và hoàn cảnh thực tế của bạn.',
+  cleaning:'Thử một thói quen chuẩn bị và vệ sinh đơn giản, không cần làm kỹ lưỡng như rửa bát.'
+};
+const LEVELS = [
+  {name:'Mầm Xanh', min:0}, {name:'Chồi Xanh', min:100}, {name:'Lá Xanh', min:250},
+  {name:'Người Bảo Vệ Môi Trường', min:500}, {name:'Đại Sứ Xanh', min:800},
+];
+const BADGES_DEF = [
+  {id:'firstTask', name:'Bước Đầu Tiên', em:'👣', desc:'Hoàn thành nhiệm vụ đầu tiên'},
+  {id:'streak3', name:'3 Ngày Liên Tiếp', em:'🔥', desc:'Duy trì Streak 3 ngày'},
+  {id:'green7', name:'Tuần Lễ Xanh', em:'🌿', desc:'Hoàn thành thử thách 7 ngày'},
+  {id:'reuser', name:'Người Tái Sử Dụng', em:'♻️', desc:'Hoàn thành 5 nhiệm vụ tái sử dụng'},
+  {id:'reducer', name:'Người Giảm Nhựa', em:'🚫', desc:'Hoàn thành 5 nhiệm vụ giảm nhựa dùng một lần'},
+  {id:'inspirer', name:'Người Truyền Cảm Hứng', em:'📣', desc:'Rủ bạn cùng thực hiện hành động xanh'},
+  {id:'learner', name:'Người Học Hỏi', em:'📚', desc:'Đọc đủ 5 bài kiến thức'},
+  {id:'habit14', name:'Thói Quen Xanh', em:'🌳', desc:'Hoàn thành thử thách 14 ngày'},
+  {id:'sustain30', name:'Sống Bền Vững', em:'🌍', desc:'Hoàn thành thử thách 30 ngày'},
+];
+const TASK_POOL = [
+  {id:'t1', title:'Mang bình nước cá nhân khi ra ngoài', diff:'easy', cat:'mangvatdung', barriers:['forget','bulky'], goals:['G2','G3'], est:'2 phút'},
+  {id:'t2', title:'Từ chối túi ni-lông không cần thiết khi mua sắm', diff:'easy', cat:'nhua1lan', barriers:['convenience','socialFear'], goals:['G1','G3'], est:'1 phút'},
+  {id:'t3', title:'Từ chối ống hút nhựa khi không thực sự cần', diff:'easy', cat:'nhua1lan', barriers:['convenience','experience'], goals:['G1'], est:'1 phút'},
+  {id:'t4', title:'Tắt đèn và thiết bị điện khi rời phòng', diff:'easy', cat:'tietkiemdien', barriers:['busy'], goals:['G3'], est:'30 giây'},
+  {id:'t5', title:'Chọn "Không nhận dụng cụ ăn uống" khi đặt đồ ăn online', diff:'easy', cat:'nhua1lan', barriers:['forget'], goals:['G1','G2'], est:'1 phút'},
+  {id:'t6', title:'Tái sử dụng một chai / hộp / túi còn sạch tại nhà', diff:'easy', cat:'taisudung', barriers:['cost'], goals:['G4'], est:'2 phút'},
+  {id:'t7', title:'Mang túi vải hoặc túi riêng khi đi mua sắm', diff:'easy', cat:'mangvatdung', barriers:['forget','bulky'], goals:['G2','G3'], est:'2 phút'},
+  {id:'t8', title:'Đọc một bài trong Góc Kiến thức', diff:'easy', cat:'kienthuc', barriers:[], goals:['G5'], est:'5 phút'},
+  {id:'t9', title:'Giữ gìn, không làm hư hại một cây xanh quanh bạn', diff:'easy', cat:'caanhhuong', barriers:[], goals:['G3'], est:'3 phút'},
+  {id:'t10', title:'Gom các món đồ chung vào một túi lớn thay vì nhiều túi nhỏ', diff:'easy', cat:'nhua1lan', barriers:['convenience'], goals:['G1'], est:'1 phút'},
+  {id:'t11', title:'Hoàn thành mua sắm mà không dùng túi ni-lông mới', diff:'medium', cat:'nhua1lan', barriers:['convenience','socialFear'], goals:['G1'], est:'10 phút'},
+  {id:'t12', title:'Phân loại ít nhất 3 nhóm rác tại nhà', diff:'medium', cat:'phanloai', barriers:['cleaning'], goals:['G4'], est:'10 phút'},
+  {id:'t13', title:'Giải thích một mẹo sống xanh cho gia đình / bạn bè', diff:'medium', cat:'caanhhuong', barriers:['peerInfluence'], goals:['G6'], est:'5 phút'},
+  {id:'t14', title:'Chuẩn bị sẵn bình nước và túi vải cạnh cửa ra vào', diff:'medium', cat:'mangvatdung', barriers:['forget'], goals:['G2'], est:'5 phút'},
+  {id:'t15', title:'Tìm một sản phẩm thay thế cho món đồ nhựa bạn hay dùng nhất', diff:'medium', cat:'kienthuc', barriers:['experience'], goals:['G5'], est:'10 phút'},
+  {id:'t16', title:'Tự mang hộp đựng thực phẩm cá nhân khi mua đồ ăn', diff:'medium', cat:'mangvatdung', barriers:['bulky','cleaning'], goals:['G1','G2'], est:'10 phút'},
+  {id:'t17', title:'Rửa sạch và cất gọn túi ni-lông / hộp để dùng lại lần sau', diff:'medium', cat:'taisudung', barriers:['cleaning'], goals:['G4'], est:'5 phút'},
+  {id:'t18', title:'Một ngày hạn chế tối đa nhựa dùng một lần', diff:'hard', cat:'nhua1lan', barriers:['convenience'], goals:['G1','G6'], est:'cả ngày'},
+  {id:'t19', title:'Rủ một người bạn cùng thực hiện một hành động xanh hôm nay', diff:'hard', cat:'caanhhuong', barriers:['peerInfluence'], goals:['G6'], est:'10 phút'},
+  {id:'t20', title:'Hoàn thành 3 nhiệm vụ xanh khác nhau trong một ngày', diff:'hard', cat:'tonghop', barriers:[], goals:['G6'], est:'cả ngày'},
+  {id:'t21', title:'Thử một sản phẩm thay thế mới (ống hút giấy, hộp inox...) trong 1 tuần', diff:'hard', cat:'kienthuc', barriers:['experience'], goals:['G5'], est:'1 tuần'},
+  {id:'t22', title:'Không nhận thêm ống hút / muỗng nhựa dù được đưa sẵn hôm nay', diff:'easy', cat:'nhua1lan', barriers:['socialFear'], goals:['G1'], est:'1 phút'},
+  {id:'t23', title:'Tận dụng ánh sáng tự nhiên thay vì bật đèn ban ngày', diff:'easy', cat:'tietkiemdien', barriers:[], goals:['G3'], est:'0 phút'},
+  {id:'t24', title:'Ghi lại 1 rào cản bạn gặp phải hôm nay vào Nhật ký xanh', diff:'easy', cat:'kienthuc', barriers:[], goals:['G3'], est:'2 phút'},
+];
+const DIFF_POINTS = {easy:10, medium:15, hard:20};
+const FAILURE_REASONS = [
+  {id:'forgot', label:'Quên', hint:'Đề xuất đặt Reminder sớm hơn'},
+  {id:'noTime', label:'Không có thời gian', hint:'Đề xuất nhiệm vụ dưới 2 phút'},
+  {id:'inconvenient', label:'Không thuận tiện', hint:'Đề xuất phương án đơn giản hơn'},
+  {id:'noItem', label:'Không có vật dụng cần thiết', hint:'Đề xuất nhiệm vụ không cần chuẩn bị'},
+  {id:'notSuitable', label:'Không phù hợp với hoàn cảnh', hint:'Cho đổi sang nhiệm vụ khác'},
+  {id:'noMotivation', label:'Thiếu động lực', hint:'Xem lại tiến trình nhỏ và mục tiêu gần'},
+  {id:'dontKnow', label:'Không biết cách làm', hint:'Gợi ý bài kiến thức liên quan'},
+  {id:'other', label:'Khác', hint:'Bạn có thể ghi chú thêm bên dưới'},
+];
+
+/* ---------------- Knowledge lessons (10 bài — cấu trúc rút gọn theo khung chuẩn) ---------------- */
+const LESSONS = [
+  {id:1, title:'Ô nhiễm nhựa', goal:'Hiểu bản chất vấn đề ô nhiễm nhựa và vai trò của hành động cá nhân.',
+    core:'Nhựa bền, nhẹ, rẻ nên được dùng khắp nơi — nhưng chính sự bền bỉ đó khiến nhựa tồn tại hàng trăm năm trong tự nhiên. Chỉ khoảng 9% nhựa toàn cầu được tái chế, phần lớn còn lại tích lũy trong môi trường.',
+    example:'Một chai nước nhựa dùng khoảng 12 phút nhưng cần tới 450 năm để phân hủy hoàn toàn.',
+    myth:'"Dùng một lần thì không ảnh hưởng gì" — nhưng khi hàng triệu người cùng nghĩ vậy, tác động sẽ trở nên rất lớn.',
+    tip:'Trước khi nhận một món đồ nhựa dùng một lần, hãy tự hỏi: "Mình có thực sự cần nó không?"',
+    linkedTasks:['t2','t3','t22']},
+  {id:2, title:'Nhựa dùng một lần — Vấn đề và giải pháp thay thế', goal:'Phân biệt nhựa hữu ích với nhựa dùng một lần và biết thứ tự ưu tiên hành động.',
+    core:'Vấn đề cốt lõi là mô hình "dùng vài phút rồi vứt bỏ hàng trăm năm". Thứ tự ưu tiên đúng là: Giảm sử dụng trước → Tái sử dụng nhiều lần → Tái chế khi không dùng được nữa.',
+    example:'Ống hút nhựa chỉ dùng 5–10 phút nhưng cần hơn 200 năm để phân hủy.',
+    myth:'"Tái chế là giải pháp hoàn hảo" — thực tế tỷ lệ tái chế thấp và tốn chi phí; giảm sử dụng luôn hiệu quả nhất.',
+    tip:'Chỉ cần nói một câu: "Không cần túi/ống hút đâu ạ, mình có đồ rồi" — hầu hết người bán sẽ vui vẻ đồng ý.',
+    linkedTasks:['t3','t2','t5']},
+  {id:3, title:'Sản phẩm tái sử dụng — Không cần mua đồ mới', goal:'Học cách trân trọng và kéo dài vòng đời vật dụng đã có thay vì mua đồ "xanh" mới.',
+    core:'Tái sử dụng có tác động môi trường thấp nhất vì không cần khai thác, sản xuất hay vận chuyển gì mới. Vật dụng thân thiện nhất là vật dụng bạn đã có sẵn.',
+    example:'Một chai nhựa sạch rửa lại và dùng 10 lần vẫn tốt hơn là mua 10 chai mới rồi vứt.',
+    myth:'"Phải mua bình thủy tinh/inox mới gọi là tái sử dụng" — không nhất thiết, tận dụng đồ sẵn có mới là cốt lõi.',
+    tip:'Rà soát tủ bếp, kệ đồ, tìm 3 vật dụng còn tốt nhưng ít dùng để bắt đầu dùng lại.',
+    linkedTasks:['t6','t17']},
+  {id:4, title:'Nguyên tắc 3R — Giảm → Tái sử dụng → Tái chế', goal:'Hiểu đúng thứ tự ưu tiên của 3R, không đảo ngược vai trò của từng bước.',
+    core:'Giảm là hiệu quả nhất vì ngăn rác hình thành ngay từ gốc; Tái sử dụng kéo dài vòng đời sản phẩm; Tái chế là giải pháp cuối dòng, tốn năng lượng và không thu hồi được 100% vật liệu.',
+    example:'Không nhận túi ni-lông (Giảm) luôn tốt hơn nhận rồi mang đi tái chế sau này.',
+    myth:'"Tái chế là bước quan trọng nhất" — sai, Giảm và Tái sử dụng luôn hiệu quả hơn nhiều lần.',
+    tip:'Trước khi nhận hay mua bất kỳ thứ gì, tự hỏi: "Mình có thực sự cần không?"',
+    linkedTasks:['t2','t6','t12']},
+  {id:5, title:'Phân loại rác — Theo quy định địa phương', goal:'Hiểu vì sao cần phân loại rác và thực hành đúng theo quy định nơi bạn sống.',
+    core:'Rác thường chia 3 nhóm: hữu cơ, có thể tái chế, và rác khác/khó tái chế. Rác nguy hại (pin, bóng đèn hỏng...) cần tách riêng hoàn toàn. Cách phân loại chi tiết có thể khác nhau tùy địa phương.',
+    example:'Chai nhựa sạch thường thuộc nhóm tái chế; chai dính đầy thức ăn thường khó tái chế hơn.',
+    myth:'"Tất cả nhựa đều bỏ vào thùng tái chế" — nhựa bẩn hoặc nhựa mỏng thường không tái chế được.',
+    tip:'Bắt đầu từ việc tách rác hữu cơ và rác nguy hại — hai nhóm dễ nhận biết nhất.',
+    linkedTasks:['t12']},
+  {id:6, title:'Tiêu dùng bền vững — Trước khi mua hãy suy nghĩ', goal:'Hiểu tiêu dùng bền vững là suy nghĩ cẩn thận trước khi mua, không phải mua thật nhiều đồ "xanh".',
+    core:'Trước khi mua, tự hỏi: mình có thực sự cần không? đã có vật dụng tương đương chưa? sản phẩm có bền không? có thể tái sử dụng/tái chế sau này không?',
+    example:'Dùng tiếp bình nhựa còn tốt cho đến khi hỏng hẳn tốt hơn là vứt để mua bình inox mới ngay.',
+    myth:'"Mua sản phẩm nhãn xanh = tiêu dùng bền vững" — nếu không thực sự cần, việc sản xuất và vận chuyển vẫn tạo tác động không cần thiết.',
+    tip:'Quy tắc 3 ngày: đợi 3 ngày trước khi mua món đồ không cấp thiết — nếu vẫn thấy cần thì hãy mua.',
+    linkedTasks:['t6','t15']},
+  {id:7, title:'Tiết kiệm năng lượng — Hành động đơn giản mỗi ngày', goal:'Hiểu tiết kiệm điện cũng là một hình thức bảo vệ môi trường.',
+    core:'Điện phần lớn được sản xuất từ nhiên liệu hóa thạch hoặc thủy điện, cả hai đều có tác động môi trường. Cách sạch và rẻ nhất là tiết kiệm điện đang có.',
+    example:'Tắt đèn khi ra khỏi phòng trung bình 3 giờ/ngày có thể tiết kiệm đáng kể điện năng mỗi tháng.',
+    myth:'"Tắt bật liên tục sẽ hỏng thiết bị nhanh hơn" — với hầu hết thiết bị hiện đại, tắt khi không dùng còn giúp kéo dài tuổi thọ.',
+    tip:'Thành thói quen: rời phòng → tắt đèn + tắt thiết bị không cần thiết.',
+    linkedTasks:['t4','t23']},
+  {id:8, title:'Cây xanh — Bắt đầu từ những gì đã có', goal:'Hiểu rằng bảo vệ cây đã có cũng quan trọng như trồng cây mới.',
+    core:'Cây xanh hấp thụ CO2, điều hòa vi khí hậu, giữ đất giữ nước. Không nhất thiết phải tự tay trồng cây mới — giữ gìn, chăm sóc cây đã có xung quanh cũng rất ý nghĩa.',
+    example:'Không bẻ cành, không khắc chữ lên thân cây tại trường học hay quanh nhà.',
+    myth:'"Phải tự tay trồng cây mới là bảo vệ môi trường" — bảo vệ cây trưởng thành đã có còn quan trọng hơn.',
+    tip:'Tưới nước cho cây vào sáng sớm hoặc chiều mát, tránh tưới giữa trưa nắng gắt.',
+    linkedTasks:['t9']},
+  {id:9, title:'Giảm rác thải — Bắt đầu trước khi rác xuất hiện', goal:'Hiểu rằng giảm rác hiệu quả nhất là ngăn rác hình thành ngay từ đầu.',
+    core:'Không tạo ra rác thì không cần xử lý rác. Mỗi lần bạn từ chối một vật dụng không cần thiết, bạn đã ngăn chặn vật dụng đó trở thành rác thải.',
+    example:'Không nhận túi ni-lông 3 lần/tuần có thể giúp giảm khoảng 600 túi mỗi năm.',
+    myth:'"Tôi chỉ tạo ra ít rác, không đáng kể" — khi hàng triệu người cùng nghĩ vậy, tổng lượng rác sẽ rất lớn.',
+    tip:'Luôn chuẩn bị sẵn bình nước, túi vải nhỏ trong balo để không phải nhận đồ mới khi cần.',
+    linkedTasks:['t2','t10','t22']},
+    {id:10, title:'Hình thành thói quen xanh — Từ hành động đến thành tựu', goal:'Hiểu cách thói quen được hình thành và tại sao nên bắt đầu từ những bước nhỏ.',
+    core:'Thói quen hình thành theo chu trình: Kích hoạt → Mong muốn → Hành động → Phần thưởng. Trung bình cần khoảng 66 ngày để một hành động trở thành thói quen tự nhiên — không cần vội.',
+    example:'Bắt đầu chỉ với một việc (nhớ mang bình nước), duy trì đều đặn, rồi mới thêm việc tiếp theo.',
+    myth:'"Bỏ lỡ một ngày là hỏng hết" — sai, bỏ lỡ một ngày không ảnh hưởng nhiều, quan trọng là quay lại vào ngày sau.',
+    tip:'Đặt bình nước, túi vải ngay cạnh cửa ra vào để luôn nhìn thấy và nhớ mang theo.',
+    linkedTasks:['t14','t24']},
+];
+const LESSON_QUIZ = {
+  1:{q:'Rác thải nhựa cần bao lâu để phân hủy hoàn toàn trong tự nhiên?', opts:['Vài ngày','Vài tháng','Hàng trăm năm'], correct:2},
+  2:{q:'Thứ tự ưu tiên đúng khi giảm nhựa là gì?', opts:['Tái chế → Giảm → Tái sử dụng','Giảm → Tái sử dụng → Tái chế','Tái sử dụng → Tái chế → Giảm'], correct:1},
+  3:{q:'Vật dụng nào được xem là "thân thiện môi trường" nhất?', opts:['Vật dụng mới mua có nhãn xanh','Vật dụng bạn đã có sẵn, dùng lại được','Vật dụng đắt tiền nhất'], correct:1},
+  4:{q:'Bước nào trong 3R nên được ưu tiên đầu tiên?', opts:['Recycle (Tái chế)','Reduce (Giảm)','Reuse (Tái sử dụng)'], correct:1},
+  5:{q:'Rác nào cần được tách riêng hoàn toàn, không bỏ chung rác sinh hoạt?', opts:['Rác hữu cơ','Rác nguy hại (pin, bóng đèn hỏng)','Giấy sạch'], correct:1},
+  6:{q:'Trước khi mua một món đồ không cấp thiết, nên làm gì?', opts:['Mua ngay kẻo hết hàng','Đợi vài ngày rồi cân nhắc lại','Mua thêm cho chắc'], correct:1},
+  7:{q:'Cách tiết kiệm điện nào không tốn tiền?', opts:['Mua thiết bị tiết kiệm điện đắt tiền','Tắt đèn, tắt thiết bị khi không dùng','Dùng nhiều thiết bị hơn'], correct:1},
+  8:{q:'Hành động nào cũng có giá trị như trồng cây mới?', opts:['Bẻ cành để xem cây','Bảo vệ, chăm sóc cây đã có','Không quan tâm đến cây quanh nhà'], correct:1},
+  9:{q:'Cách giảm rác hiệu quả nhất là gì?', opts:['Xử lý rác thật tốt sau khi đã tạo ra','Ngăn rác hình thành ngay từ đầu','Đốt rác tại nhà'], correct:1},
+  10:{q:'Trung bình cần khoảng bao lâu để một hành động trở thành thói quen?', opts:['3 ngày','66 ngày','1 ngày'], correct:1},
+};
+
+/* Eco Sort game data */
+const SORT_ITEMS = [
+  {n:'Vỏ chuối', bin:'huuco'}, {n:'Chai nhựa sạch', bin:'taiche'}, {n:'Pin cũ', bin:'nguyhai'},
+  {n:'Túi ni-lông bẩn', bin:'khac'}, {n:'Giấy báo cũ', bin:'taiche'}, {n:'Lá cây khô', bin:'huuco'},
+  {n:'Bóng đèn hỏng', bin:'nguyhai'}, {n:'Vỏ trứng', bin:'huuco'}, {n:'Lon nhôm', bin:'taiche'},
+  {n:'Khăn giấy đã dùng', bin:'khac'}, {n:'Hộp sữa giấy sạch', bin:'taiche'}, {n:'Thuốc hết hạn', bin:'nguyhai'},
+];
+const SORT_BINS = [{id:'huuco', label:'Hữu cơ', em:'🍌'}, {id:'taiche', label:'Tái chế được', em:'♻️'}, {id:'khac', label:'Rác khác', em:'🗑️'}, {id:'nguyhai', label:'Rác nguy hại', em:'☣️'}];
+
+/* Eco Choice scenarios */
+const CHOICE_SCENARIOS = [
+  {q:'Bạn quên mang túi khi đi siêu thị. Bạn sẽ:', opts:[
+    {t:'Mua túi vải dùng nhiều lần bán tại quầy', v:'best'}, {t:'Ôm đồ trên tay, không dùng túi mới', v:'good'},
+    {t:'Mua túi ni-lông cho tiện', v:'poor'}, {t:'Bỏ cuộc, không mua nữa', v:'bad'}]},
+  {q:'Người bán tự động đưa túi ni-lông cho bạn dù bạn đã có túi riêng. Bạn sẽ:', opts:[
+    {t:'Lịch sự trả lại, dùng túi của mình', v:'best'}, {t:'Nhận nhưng thấy hơi áy náy', v:'good'},
+    {t:'Nhận vui vẻ vì đằng nào cũng tiện', v:'poor'}, {t:'Xin thêm túi để bọc chắc chắn hơn', v:'bad'}]},
+  {q:'Khi đặt đồ ăn online, mục "Dụng cụ ăn uống" thói quen của bạn là:', opts:[
+    {t:'Luôn chọn "Không lấy dụng cụ nhựa"', v:'best'}, {t:'Thỉnh thoảng mới nhớ tick chọn', v:'good'},
+    {t:'Luôn lấy đầy đủ cho tiện', v:'poor'}, {t:'Lấy để dành dù không cần', v:'bad'}]},
+  {q:'Ống hút giấy bị mềm khi dùng được nửa ly. Bạn sẽ:', opts:[
+    {t:'Bỏ ống hút, uống trực tiếp từ ly', v:'best'}, {t:'Ráng chịu đựng bất tiện để bảo vệ môi trường', v:'good'},
+    {t:'Xin nhân viên một ống hút giấy mới', v:'good'}, {t:'Bực mình, cho rằng nên quay lại dùng ống hút nhựa', v:'bad'}]},
+  {q:'Bạn bị bạn bè trêu là "làm màu" khi mang bình cá nhân đi uống trà sữa. Bạn sẽ:', opts:[
+    {t:'Vui vẻ giải thích và rủ bạn bè cùng làm', v:'best'}, {t:'Không mang bình khi đi với nhóm nữa', v:'poor'},
+    {t:'Thấy xấu hổ, tự nhủ lần sau dùng đồ nhựa cho giống mọi người', v:'bad'}, {t:'Cất bình đi, đổi sang ly nhựa', v:'bad'}]},
+];
+const CHOICE_FEEDBACK = {best:'Đây là lựa chọn tốt nhất — vừa giảm nhựa vừa duy trì được sự tự nhiên, thoải mái.',
+  good:'Một lựa chọn khá ổn — vẫn còn có cách tốt hơn một chút, nhưng đây là bước tiến tích cực.',
+  poor:'Lựa chọn này chưa thực sự giúp giảm nhựa — hãy thử một cách khác vào lần sau nhé.',
+  bad:'Lựa chọn này đi ngược lại mục tiêu giảm nhựa — nhưng không sao, hãy thử lại vào lần tới!'};
+
+/* =========================================================================
+   SURVEY DEFINITIONS (theo mục 4 và 5 của đặc tả — giữ nguyên nội dung)
+   ========================================================================= */
+const SURVEY_STEPS = []; // built as an ordered list of {type, ...}
+
+// Bước 0: thông tin nền (5.1)
+SURVEY_STEPS.push({type:'bg', title:'Thông tin nền', questions:[
+  {id:'bg1', text:'Bạn đã từng sử dụng ứng dụng giúp xây dựng thói quen (nhắc uống nước, tập thể dục, học tập...) chưa?',
+  opts:['Chưa từng','Đã thử vài lần nhưng không duy trì được','Đang sử dụng một ứng dụng thói quen','Đã từng duy trì được thói quen lâu dài nhờ ứng dụng']},
+]});
+
+const P1_TEXT = [
+ 'Rác thải nhựa (túi ni-lông, ly nhựa, ống hút...) đang gây ra ô nhiễm môi trường rất nghiêm trọng hiện nay.',
+ 'Nếu mỗi cá nhân có ý thức giảm sử dụng đồ nhựa sẽ thực sự mang lại tác động tích cực cho môi trường.',
+ 'Các sản phẩm thay thế cho nhựa (ống hút giấy, ly bã mía, túi vải...) an toàn cho sức khỏe và môi trường hơn đồ nhựa.',
+ 'Bạn cảm thấy khó chịu khi nhìn thấy rác thải nhựa vứt bừa bãi ngoài đường, dưới kênh rạch hoặc ở nơi công cộng khác.',
+ 'Việc thay đổi thói quen từ dùng đồ nhựa sang đồ thân thiện với môi trường là trách nhiệm của mỗi cá nhân, chứ không phải chỉ của nhà nước.',
+ 'Các quán cafe, quán ăn chuyển sang dùng hộp giấy, túi giấy thay vì đồ nhựa là một việc làm rất cần thiết.',
+ 'Bạn nhận thức rõ ràng rằng rác thải nhựa phải mất hàng trăm năm mới có thể phân hủy hết trong tự nhiên.',
+ 'Việc sử dụng đồ nhựa dùng một lần là thói quen không tốt và cần phải được loại bỏ dần.',
+ 'Bạn chi thêm một chút tiền từ 1.000đ đến 2.000đ cho bao bì thân thiện với môi trường thay vì nhựa là hoàn toàn xứng đáng.',
+ 'Việc tuyên truyền về tác hại của nhựa và thúc đẩy việc sử dụng các sản phẩm thay thế nhựa cho mọi người xung quanh là điều vô cùng quan trọng.'];
+const P2_TEXT = [
+ 'Bạn tự mang theo túi vải hoặc túi cá nhân khi đi chợ, siêu thị, cửa hàng tiện lợi.',
+ 'Khi mua nước mang đi, bạn thích mua ly giấy, ống hút giấy hơn ly nhựa, ống hút nhựa.',
+ 'Bạn thường mang theo bình nước cá nhân để mua cà phê, trà sữa thay vì dùng ly nhựa của quán.',
+ 'Khi đi chợ, bạn gom các món đồ chung vào một túi lớn thay vì mỗi món lấy một bịch ni-lông riêng.',
+ 'Bạn ưu tiên chọn mua các sản phẩm có bao bì bằng giấy, thủy tinh hoặc vật liệu tái chế thay vì bao bì nhựa.',
+ 'Bạn giữ lại và tái sử dụng các chai nhựa, hộp nhựa hoặc túi ni-lông (còn sạch) nhiều lần ở nhà.',
+ 'Bạn thường bấm chọn "Không nhận muỗng, nĩa nhựa" khi đặt đồ ăn giao đến nhà.',
+ 'Bạn tự mang theo hộp đựng thực phẩm cá nhân khi đi mua đồ ăn sáng hoặc mua đồ ăn mang về.',
+ 'Bạn nhắc nhở bản thân, người thân, bạn bè xung quanh từ chối nhận thêm túi ni-lông khi không cần thiết.',
+ 'Bạn phân loại rác thải nhựa (chai nước, hộp nhựa) riêng ra khỏi rác sinh hoạt để gom đi tái chế.'];
+const P3_TEXT = [
+ 'Bạn biết nhựa có hại, nhưng do đồ nhựa được cung cấp sẵn ở khắp mọi nơi (quá tiện lợi) nên bạn vẫn dùng.',
+ 'Bạn thường hay quên mang theo túi vải hoặc bình nước cá nhân khi đi ra ngoài dù trước đó đã tự nhắc nhở bản thân.',
+ 'Bạn ngại mang theo lỉnh kỉnh túi vải, bình nước, hộp cơm bên người vì cảm thấy nó nặng, cồng kềnh và bất tiện.',
+ 'Bạn sợ bị người bán hàng tỏ thái độ khó chịu hoặc phàn nàn khi mình từ chối lấy bịch ni-lông.',
+ 'Bạn cảm thấy các sản phẩm thay thế (như ống hút giấy, muỗng gỗ) trải nghiệm sử dụng không thoải mái bằng đồ nhựa.',
+ 'Khi thấy mọi người xung quanh vẫn vô tư xài đồ nhựa, bạn cảm thấy mình không cần thiết phải cố gắng làm khác đi.',
+ 'Bạn thấy các món đồ thân thiện với môi trường có giá thành đắt hơn, tạo ra rào cản về mặt chi phí.',
+ 'Thỉnh thoảng vì quá bận rộn và vội vã, bạn chọn dùng túi ni-lông/ly nhựa cho nhanh thay vì chờ đợi hoặc tìm đồ thay thế.',
+ 'Khi trời mưa, nếu đựng đồ trong túi ni-lông sẽ tránh đồ bị ướt hơn túi vải.',
+ 'Bạn cảm thấy việc rửa lại các hộp đựng, ống hút cá nhân (bằng inox/thủy tinh) sau mỗi lần dùng mất quá nhiều thời gian nên thà dùng đồ nhựa xài một lần rồi vứt.'];
+const LIKERT5_AGREE = ['Hoàn toàn không đồng ý','Không đồng ý','Bình thường / Phân vân','Đồng ý','Hoàn toàn đồng ý'];
+const LIKERT5_FREQ = ['Không bao giờ','Hiếm khi','Thỉnh thoảng','Thường xuyên','Luôn luôn'];
+
+SURVEY_STEPS.push({type:'likert', part:'p1', title:'Phần 1 — Đánh giá Ý thức', sub:'10 câu · Mức độ đồng ý', scale:LIKERT5_AGREE, items:P1_TEXT});
+SURVEY_STEPS.push({type:'likert', part:'p2', title:'Phần 2 — Đánh giá Hành động Thực tế', sub:'10 câu · Tần suất thực hiện', scale:LIKERT5_FREQ, items:P2_TEXT});
+SURVEY_STEPS.push({type:'likert', part:'p3', title:'Phần 3 — Rào cản tâm lý', sub:'10 câu · Mức độ đồng ý', scale:LIKERT5_AGREE, items:P3_TEXT});
+
+const P4_SCENARIOS = [
+ {title:'Mua sắm tại siêu thị', text:'Bạn sực nhớ ra cần ghé siêu thị mua vài món đồ lặt vặt nhưng không mang theo túi vải. Bạn sẽ làm gì?', opts:[
+   'Ôm đồ trên tay hoặc nhét vào balo/cốp xe để tuyệt đối không dùng túi ni-lông mới.',
+   'Mua tạm một chiếc túi vải/túi giấy dùng nhiều lần bán sẵn ở quầy thu ngân.',
+   'Mua túi ni-lông của siêu thị để đựng cho tiện, tự nhủ "lỡ quên một hôm chắc không sao".',
+   'Bỏ cuộc không mua đồ nữa, đợi dịp khác mang túi đi rồi mới mua.']},
+ {title:'Đi ăn uống / quán cà phê', text:'Người bán hàng đã nhanh tay cho ổ bánh mì vào một túi ni-lông nhỏ trước khi bạn kịp nói gì. Bạn sẽ:', opts:[
+   'Lịch sự trả lại túi ni-lông và cất bánh mì vào túi của mình.',
+   'Cảm thấy hơi áy náy nhưng vẫn nhận lấy vì ngại làm phiền.',
+   'Nhận lấy một cách vui vẻ vì đằng nào người ta cũng đưa rồi.',
+   'Lấy thêm một túi ni-lông nữa để bọc bên ngoài cho chắc chắn.']},
+ {title:'Đặt đồ ăn online', text:'Đến mục tùy chọn "Dụng cụ ăn uống" (muỗng, nĩa, ống hút nhựa), thói quen của bạn thường là:', opts:[
+   'Luôn luôn chủ động chọn "Không lấy dụng cụ nhựa".',
+   'Thỉnh thoảng nhớ ra thì mới tick, đa số là quên.',
+   'Luôn lấy đầy đủ dụng cụ nhựa cho tiện.',
+   'Vẫn lấy dụng cụ nhựa cất đi để dành dù không cần.']},
+ {title:'Trải nghiệm sản phẩm thay thế', text:'Ống hút giấy bắt đầu mềm nhũn khi bạn mới uống được nửa ly. Phản ứng của bạn là gì?', opts:[
+    'Bỏ ống hút đi và uống trực tiếp từ miệng ly.',
+   'Chấp nhận sự bất tiện này vì bảo vệ môi trường, ráng uống nốt.',
+   'Đến quầy xin nhân viên một chiếc ống hút giấy mới.',
+   'Cảm thấy bực mình và cho rằng quán nên quay lại dùng ống hút nhựa.']},
+ {title:'Ảnh hưởng từ bạn bè', text:'Vài người bạn trêu chọc bạn "làm màu" khi bạn nhờ pha trà sữa vào bình cá nhân. Bạn sẽ:', opts:[
+   'Vui vẻ giải thích lý do và rủ các bạn lần sau làm cùng.',
+   'Không bao giờ mang theo bình nước cá nhân khi đi với nhóm bạn nữa.',
+   'Cảm thấy hơi xấu hổ, tự nhủ lần sau sẽ dùng đồ nhựa cho giống mọi người.',
+   'Ngại quá nên cất bình đi và đổi lại ly nhựa giống các bạn.']},
+ {title:'Rào cản chi phí', text:'Quán A bán ly nhựa giá 30.000đ, quán B bán ly bã mía thân thiện môi trường giá 35.000đ (chất lượng như nhau). Bạn sẽ:', opts:[
+   'Chọn quán B, sẵn sàng trả thêm tiền để ủng hộ bao bì bảo vệ môi trường.',
+   'Tùy túi tiền lúc đó: dư dả thì mua quán B, kẹt tiền thì mua quán A.',
+   'Chọn quán A vì giá rẻ hơn, dù sao cũng chỉ là một cái ly dùng xong vứt.',
+   'Chọn quán A vì nghĩ bao bì sinh học đắt tiền chỉ là chiêu trò marketing.']},
+ {title:'Xử lý rác thải tại nhà', text:'Sau một buổi liên hoan nhỏ, phòng bạn có rất nhiều chai/ly nhựa, hộp xốp còn sót lại. Bạn sẽ:', opts:[
+   'Súc rửa sạch chai/ly nhựa cứng, gom riêng để đem tái chế hoặc tái sử dụng.',
+   'Cố gắng dồn riêng rác nhựa ra một túi khác để người thu gom dễ phân loại.',
+   'Bỏ chung tất cả đồ nhựa lẫn thức ăn thừa vào một thùng rác lớn rồi vứt.',
+   'Không bận tâm dọn dẹp, ai rảnh thì người đó tự đi vứt.']},
+];
+SURVEY_STEPS.push({type:'scenario', title:'Phần 4 — Xử lý tình huống thực tế', sub:'7 tình huống · Chọn phương án gần nhất với cách bạn thường hành động', scenarios:P4_SCENARIOS});
+
+const P_INTENT_TEXT = ['Tự mang bình nước cá nhân khi ra ngoài.','Từ chối nhận túi ni-lông khi mua sắm không cần thiết.',
+ 'Hạn chế sử dụng ống hút nhựa khi không thực sự cần.','Tái sử dụng chai, hộp, túi còn sạch thay vì vứt bỏ.','Phân loại ít nhất một loại rác thải có thể tái chế tại nhà.'];
+const LIKERT5_INTENT = ['Chắc chắn không','Không chắc','Trung lập','Có thể','Chắc chắn có'];
+SURVEY_STEPS.push({type:'likert', part:'intent', title:'Ý định hành động trong 2 tuần tới', sub:'5 câu · Mức độ chắc chắn', scale:LIKERT5_INTENT, items:P_INTENT_TEXT});
+
+SURVEY_STEPS.push({type:'checklist', part:'barriers', title:'Rào cản chính bạn thường gặp phải', sub:'Chọn tất cả những rào cản phù hợp với bạn', options:[
+ {id:'forget', t:'Hay quên mang theo vật dụng cá nhân (bình nước, túi vải...)'},
+ {id:'bulky', t:'Cảm thấy bất tiện, nặng nề khi mang thêm đồ đạc'},
+ {id:'socialFear', t:'Ngại từ chối người bán hàng khi họ đưa túi/ống hút'},
+ {id:'cost', t:'Sản phẩm thay thế thường có giá cao hơn'},
+ {id:'experience', t:'Không biết tìm sản phẩm thay thế ở đâu / trải nghiệm chưa tốt'},
+ {id:'busy', t:'Quá bận rộn, không có thời gian chuẩn bị'},
+ {id:'peerInfluence', t:'Mọi người xung quanh vẫn dùng đồ nhựa, tôi cảm thấy lạc lõng'},
+ {id:'convenience', t:'Thiếu kiến thức hoặc thấy đồ nhựa quá tiện lợi'},
+ {id:'cleaning', t:'Rửa lại hộp/ống hút cá nhân tốn thời gian'},
+ {id:'weather', t:'Khi trời mưa, túi ni-lông tiện hơn nhiều'},
+]});
+
+SURVEY_STEPS.push({type:'checklist', part:'support', title:'Mong muốn được hỗ trợ', sub:'Chọn tối đa 3 hình thức bạn thấy hữu ích nhất', max:3, options:[
+ {id:'reminder', t:'Nhắc nhở định kỳ hàng ngày'}, {id:'smalltask', t:'Gợi ý nhiệm vụ nhỏ, dễ thực hiện'},
+ {id:'knowledge', t:'Cung cấp kiến thức môi trường dễ hiểu'}, {id:'progress', t:'Theo dõi tiến trình cá nhân'},
+ {id:'points', t:'Điểm thưởng và huy hiệu'}, {id:'friend', t:'Thử thách cùng bạn bè'},
+ {id:'barriersolution', t:'Giải pháp cụ thể cho từng rào cản tôi gặp phải'}, {id:'game', t:'Trò chơi tương tác để học hỏi'},
+ {id:'forum', t:'Diễn đàn chia sẻ kinh nghiệm'}, {id:'rank', t:'Bảng xếp hạng để tạo động lực'},
+]});
+
+SURVEY_STEPS.push({type:'open', part:'open1', title:'Chia sẻ thêm (không bắt buộc)',
+  sub:'Bạn có điều gì muốn chia sẻ thêm về thói quen tiêu dùng của mình hoặc mong muốn dành cho EcoReminder không?'});
+
+/* Post-survey — lặp phần Ý thức/Hành động cần so sánh + đánh giá trải nghiệm */
+const POST_STEPS = [
+  {type:'likert', part:'p1', title:'Ý thức (đối chiếu trước–sau)', sub:'10 câu · Mức độ đồng ý', scale:LIKERT5_AGREE, items:P1_TEXT},
+  {type:'likert', part:'p2', title:'Hành động thực tế (đối chiếu trước–sau)', sub:'10 câu · Tần suất thực hiện', scale:LIKERT5_FREQ, items:P2_TEXT},
+  {type:'likert', part:'intent', title:'Ý định hành động hiện tại', sub:'5 câu · Mức độ chắc chắn', scale:LIKERT5_INTENT, items:P_INTENT_TEXT},
+  {type:'likert', part:'exp', title:'Trải nghiệm với EcoReminder', sub:'Mức độ đồng ý', scale:LIKERT5_AGREE, items:[
+    'Ứng dụng giúp tôi nhớ thực hiện hành động xanh tốt hơn.', 'Nhiệm vụ trong ứng dụng dễ bắt đầu và phù hợp với tôi.',
+    'Tôi cảm thấy có động lực hơn nhờ điểm thưởng, Streak và huy hiệu.', 'Tôi muốn tiếp tục sử dụng EcoReminder sau khi kết thúc thử nghiệm.']},
+  {type:'open', part:'openMost', title:'Tính năng hữu ích nhất', sub:'Tính năng nào bạn thấy hữu ích nhất trong EcoReminder?'},
+  {type:'open', part:'openHard', title:'Khó khăn gặp phải', sub:'Bạn gặp khó khăn gì khi sử dụng ứng dụng?'},
+  {type:'open', part:'openSuggest', title:'Đề xuất cải thiện', sub:'Bạn có đề xuất gì để ứng dụng tốt hơn không?'},
+];
+
+const CHECKIN_QUESTIONS = [
+  {id:'ease', text:'Tuần này bạn cảm thấy thực hiện hành động xanh dễ hơn hay khó hơn?', opts:['Dễ hơn nhiều','Dễ hơn một chút','Như cũ','Khó hơn một chút','Khó hơn nhiều']},
+  {id:'barrier', text:'Rào cản lớn nhất bạn gặp phải tuần này là gì?', opts:Object.values(BARRIER_LABEL)},
+  {id:'feature', text:'Tính năng nào giúp bạn nhiều nhất?', opts:['Nhiệm vụ hàng ngày','Reminder','Streak','Eco Point / Huy hiệu','Kiến thức & Quiz','Thử thách']},
+  {id:'difficulty', text:'Bạn muốn nhiệm vụ dễ hơn, giữ nguyên hay khó hơn?', opts:['Dễ hơn','Giữ nguyên','Khó hơn']},
+  {id:'changeGoal', text:'Bạn có muốn thay đổi mục tiêu cá nhân không?', opts:['Không, giữ nguyên mục tiêu hiện tại','Có, tôi muốn thay đổi']},
+];
+
+/* =========================================================================
+   COMPUTATION HELPERS
+   ========================================================================= */
+function avg(arr){ if(!arr.length) return 0; return arr.reduce((a,b)=>a+b,0)/arr.length; }
+function pct(avgVal){ return Math.round((avgVal/5)*1000)/10; }
+function levelOf(points){ let cur=LEVELS[0]; for(const l of LEVELS){ if(points>=l.min) cur=l; } return cur; }
+function nextLevel(points){ for(const l of LEVELS){ if(points<l.min) return l; } return null; }
+
+function computeSurveyScores(answers){
+  const p1 = P1_TEXT.map((_,i)=>answers['p1_'+i]||0);
+  const p2 = P2_TEXT.map((_,i)=>answers['p2_'+i]||0);
+  const p3 = P3_TEXT.map((_,i)=>answers['p3_'+i]||0);
+  const intent = P_INTENT_TEXT.map((_,i)=>answers['intent_'+i]||0);
+  const awarenessScore = pct(avg(p1));
+  const behaviorScore = pct(avg(p2));
+  const intentionScore = pct(avg(intent));
+  const gap = Math.round((intentionScore - behaviorScore)*10)/10;
+  // barrier scoring from part3 + checklist
+  const barrierMap = {};
+  BARRIER_KEYS.forEach((k,i)=>{ barrierMap[k] = p3[i]||0; });
+  const checklist = answers.barriers_checked || [];
+  checklist.forEach(k=>{ if(barrierMap[k]!==undefined) barrierMap[k]+=1; });
+  const topBarriers = Object.entries(barrierMap).sort((a,b)=>b[1]-a[1]).slice(0,3).map(e=>e[0]);
+  // scenario profile
+  const counts = {A:0,B:0,C:0,D:0};
+  (answers.scenario_answers||[]).forEach(letter=>{ if(counts[letter]!==undefined) counts[letter]++; });
+  let scenarioProfile = 'B';
+  let max=-1;
+  Object.entries(counts).forEach(([k,v])=>{ if(v>max){ max=v; scenarioProfile=k; } });
+  return {awarenessScore, behaviorScore, intentionScore, gap, barrierMap, topBarriers, scenarioCounts:counts, scenarioProfile};
+}
+function level5(x){ return x<50?'Thấp':(x<75?'Trung bình':'Cao'); }
+const SCENARIO_LABEL = {A:'Hành động chưa thay đổi', B:'Có ý thức nhưng chưa hành động', C:'Hành động tích cực', D:'Hành động và lan tỏa'};
+
+/* =========================================================================
+   GAMIFICATION UPDATES
+   ========================================================================= */
+function addPoints(amount, reason){
+  state.points.total += amount;
+  state.points.history.push({date:todayStr(), amount, reason, ts:Date.now()});
+  persist('points');
+  checkLevelUp();
+}
+let _lastLevelName = null;
+function checkLevelUp(){
+  const lv = levelOf(state.points.total).name;
+  if(_lastLevelName===null) _lastLevelName = lv;
+  if(lv !== _lastLevelName){
+    _lastLevelName = lv;
+    toast('Chúc mừng! Bạn đã đạt Level mới!', '🏆');
+  }
+}
+function markDayActive(){
+  const t = todayStr();
+  if(state.streak.lastActiveDate === t) return; // already counted today
+  const yest = new Date(); yest.setDate(yest.getDate()-1);
+  const yestStr = yest.getFullYear()+'-'+String(yest.getMonth()+1).padStart(2,'0')+'-'+String(yest.getDate()).padStart(2,'0');
+  if(state.streak.lastActiveDate === yestStr){ state.streak.current += 1; }
+  else { state.streak.current = 1; }
+  if(state.streak.current > state.streak.longest) state.streak.longest = state.streak.current;
+  state.streak.lastActiveDate = t;
+  persist('streak');
+  if(state.streak.current===3) unlockBadge('streak3');
+}
+function unlockBadge(id){
+  if(state.badges.includes(id)) return;
+  state.badges.push(id);
+  persist('badges');
+  const b = BADGES_DEF.find(x=>x.id===id);
+  toast('Bạn vừa mở khóa một Badge mới! '+(b?b.name:''), b?b.em:'🏅');
+}
+function addGrowthPoints(amount){
+  state.games.growthPoints += amount;
+  persist('games');
+}
+function treeStageInfo(){
+  const gp = state.games.growthPoints;
+  const stages = [
+    {min:0, em:'🌰', name:'Hạt giống'}, {min:30, em:'🌱', name:'Mầm'}, {min:100, em:'🌿', name:'Cây non'},
+    {min:250, em:'🌳', name:'Cây trưởng thành'}, {min:500, em:'🌲', name:'Cây cổ thụ'}, {min:900, em:'🌴🌳🌲', name:'Khu rừng'},
+  ];
+  let cur=stages[0]; for(const s of stages){ if(gp>=s.min) cur=s; }
+  return {...cur, gp};
+}
+
+/* =========================================================================
+   TASKS
+   ========================================================================= */
+function getTodayTasks(){
+  const t = todayStr();
+  if(!state.tasks.byDate[t]) generateDailyTasks(t);
+  return state.tasks.byDate[t];
+}
+function recentTaskIds(days){
+  const ids = new Set();
+  const d = new Date();
+  for(let i=1;i<=days;i++){
+    const dd = new Date(d); dd.setDate(dd.getDate()-i);
+    const key = dd.getFullYear()+'-'+String(dd.getMonth()+1).padStart(2,'0')+'-'+String(dd.getDate()).padStart(2,'0');
+    const arr = state.tasks.byDate[key];
+    if(arr) arr.forEach(x=>ids.add(x.taskId));
+  }
+  return ids;
+}
+function generateDailyTasks(dateKey){
+  const profile = state.profile;
+  const survey = state.surveyInitial;
+  const topBarriers = survey ? survey.topBarriers : [];
+  const goals = profile ? profile.goals : [];
+  const avoid = recentTaskIds(2);
+  function score(task){
+    let s = 0;
+    task.barriers.forEach(b=>{ if(topBarriers.includes(b)) s+=3; });
+    task.goals.forEach(g=>{ if(goals.includes(g)) s+=2; });
+    if(avoid.has(task.id)) s -= 5;
+    s += Math.random();
+    return s;
+  }
+  function pick(diff, excludeIds){
+    const pool = TASK_POOL.filter(t=>t.diff===diff && !excludeIds.includes(t.id));
+    if(!pool.length) return null;
+    pool.sort((a,b)=>score(b)-score(a));
+    return pool[0];
+  }
+  const main = pick('easy', []) || TASK_POOL[0];
+  const secondary = pick('medium', [main.id]) || TASK_POOL[1];
+  const bonus = pick('hard', [main.id, secondary.id]) || TASK_POOL[2];
+  const list = [main, secondary, bonus].map((t,i)=>({
+    instId: uid(), taskId:t.id, title:t.title, diff:t.diff, cat:t.cat, est:t.est, barriers:t.barriers,
+    points: DIFF_POINTS[t.diff], slot: i===0?'Nhiệm vụ chính':(i===1?'Nhiệm vụ phụ':'Nhiệm vụ Bonus'),
+    status:'pending', failureReason:null, note:null,
+  }));
+  state.tasks.byDate[dateKey] = list;
+  persist('tasks');
+}
+function replaceTask(dateKey, instId){
+  const list = state.tasks.byDate[dateKey];
+  const idx = list.findIndex(x=>x.instId===instId);
+  if(idx<0) return;
+  const cur = list[idx];
+  const usedIds = list.map(x=>x.taskId);
+  const pool = TASK_POOL.filter(t=>t.diff===cur.diff && !usedIds.includes(t.id));
+  if(!pool.length){ toast('Không còn nhiệm vụ khác cùng mức độ để đổi.', 'ℹ️'); return; }
+  const t = pool[Math.floor(Math.random()*pool.length)];
+  list[idx] = {instId:uid(), taskId:t.id, title:t.title, diff:t.diff, cat:t.cat, est:t.est, barriers:t.barriers,
+    points:DIFF_POINTS[t.diff], slot:cur.slot, status:'replaced_from', originalTitle:cur.title, failureReason:null, note:null};
+  persist('tasks');
+  render();
+}
+function completeTask(dateKey, instId){
+  const list = state.tasks.byDate[dateKey];
+  const item = list.find(x=>x.instId===instId);
+  if(!item || item.status==='completed') return;
+  item.status='completed';
+  persist('tasks');
+  addPoints(item.points, 'Nhiệm vụ: '+item.title);
+  addGrowthPoints(10);
+  markDayActive();
+  updateCategoryBadges();
+  updateCommitmentChecks(item);
+  toast('Bạn đã hoàn thành nhiệm vụ hôm nay!', '✅');
+  unlockBadge('firstTask');
+  render();
+}
+function markNotCompleted(dateKey, instId, reason, note){
+  const list = state.tasks.byDate[dateKey];
+  const item = list.find(x=>x.instId===instId);
+  if(!item) return;
+  item.status='not_completed';
+  item.failureReason = reason;
+  item.note = note||null;
+  persist('tasks');
+  render();
+}
+function updateCategoryBadges(){
+  let reuse=0, reduce=0;
+  Object.values(state.tasks.byDate).forEach(list=>{
+    list.forEach(t=>{
+      if(t.status==='completed'){
+        if(t.cat==='taisudung') reuse++;
+        if(t.cat==='nhua1lan') reduce++;
+        if(t.taskId==='t19') unlockBadge('inspirer');
+      }
+    });
+  });
+  if(reuse>=5) unlockBadge('reuser');
+  if(reduce>=5) unlockBadge('reducer');
+}
+
+/* =========================================================================
+   JOURNAL
+   ========================================================================= */
+function addJournalEntry(entry){
+  state.journal.unshift({id:uid(), date:todayStr(), ...entry});
+  persist('journal');
+}
+function addFreeAction(action, note, barrier){
+  const t = todayStr();
+  const todayFree = state.journal.filter(j=>j.date===t && j.free).length;
+  const cap = 3;
+  const willEarn = todayFree < cap;
+  addJournalEntry({action, note, barrier, free:true, points: willEarn?5:0});
+  markDayActive();
+  if(willEarn){ addPoints(5, 'Hành động tự do: '+action); toast('Đã ghi nhận hành động của bạn!', '🌿'); }
+  else { toast('Đã ghi nhận (đã đạt giới hạn điểm thưởng hôm nay).', '📝'); }
+  render();
+}
+
+/* =========================================================================
+   VIEW STATE
+   ========================================================================= */
+let currentTab = 'home';
+let uiState = {}; // scratch state for in-progress forms/wizards
+
+function switchTab(tab){
+  currentTab = tab;
+  ['viewHome','viewTasks','viewJournal','viewProgress','viewProfile'].forEach(id=>{
+    document.getElementById(id).classList.add('hidden');
+  });
+  const map = {home:'viewHome', tasks:'viewTasks', journal:'viewJournal', progress:'viewProgress', profile:'viewProfile'};
+  document.getElementById(map[tab]).classList.remove('hidden');
+  renderNav();
+  window.scrollTo(0,0);
+  renderCurrentView();
+}
+function renderCurrentView(){
+  if(currentTab==='home') renderHome();
+  else if(currentTab==='tasks') renderTasksView();
+  else if(currentTab==='journal') renderJournalView();
+  else if(currentTab==='progress') renderProgressView();
+  else if(currentTab==='profile') renderProfileView();
+}
+
+const NAV_ICONS = {
+  home:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  tasks:'<path d="M9 11l2 2 4-4"/><rect x="3" y="4" width="18" height="17" rx="2"/>',
+  journal:'<path d="M4 4h13l3 3v13H4z"/><path d="M8 9h9M8 13h9M8 17h5"/>',
+  progress:'<path d="M4 20V10M11 20V4M18 20v-7"/>',
+  profile:'<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-7 8-7s8 3 8 7"/>',
+};
+const NAV_LABELS = {home:'Trang chủ', tasks:'Nhiệm vụ', journal:'Ghi nhận', progress:'Tiến trình', profile:'Hồ sơ'};
+function navHTML(){
+  return Object.keys(NAV_LABELS).map(k=>`
+    <button class="nav-item ${currentTab===k?'active':''}" onclick="switchTab('${k}')">
+      <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${NAV_ICONS[k]}</svg>
+      <span>${NAV_LABELS[k]}</span>
+    </button>`).join('');
+}
+function renderNav(){
+  document.getElementById('bottomNav').innerHTML = navHTML();
+  document.getElementById('topNavDesktop').innerHTML = navHTML();
+}
+
+/* =========================================================================
+   RENDER: HOME / DASHBOARD
+   ========================================================================= */
+function renderHome(){
+  const el = document.getElementById('viewHome');
+  const p = state.profile;
+  const s = state.surveyInitial;
+  const level = levelOf(state.points.total);
+  const next = nextLevel(state.points.total);
+  const progressToNext = next ? Math.min(100, Math.round(((state.points.total-level.min)/(next.min-level.min))*100)) : 100;
+  const todayTasks = getTodayTasks();
+  const doneToday = todayTasks.filter(t=>t.status==='completed').length;
+
+  let checkinBanner = '';
+  const daysSince = p ? daysBetween(p.createdAt, new Date().toISOString()) : 0;
+  if(daysSince>=7 && state.checkins.length===0){
+    checkinBanner = `<div class="notice-banner"><span style="font-size:20px;">🗓️</span>
+      <div style="flex:1;"><p style="font-weight:700;color:var(--ink);margin-bottom:4px;">Đã 7 ngày rồi đó!</p>
+      <p>Dành 1 phút cho Mini Check-in để EcoReminder hiểu bạn hơn nhé.</p>
+      <button class="btn btn-amber btn-sm" style="margin-top:10px;" onclick="openCheckin()">Check-in ngay</button></div></div>`;
+  }
+
+  let barrierBlock = '';
+  if(s && s.topBarriers.length){
+    const top = s.topBarriers[0];
+    barrierBlock = `<div class="card barrier-card">
+      <div class="barrier-icon">🧩</div>
+      <div>
+        <h4 style="font-size:14px;">Rào cản bạn hay gặp: ${BARRIER_LABEL[top]}</h4>
+        <p style="font-size:13px;margin-top:3px;">${BARRIER_SOLUTION[top]}</p>
+      </div></div>`;
+  }
+
+  el.innerHTML = `
+    <div class="card greet-card">
+      <h2>Chào ${p?p.nickname:'bạn'} 👋</h2>
+      <p>Những hành động nhỏ hôm nay sẽ trở thành thói quen xanh của ngày mai.</p>
+      <div class="stat-row">
+        <div class="stat-pill"><div class="v">${state.streak.current}</div><div class="l">Streak hiện tại</div></div>
+        <div class="stat-pill"><div class="v">${state.points.total}</div><div class="l">Eco Point</div></div>
+        <div class="stat-pill"><div class="v">${level.name}</div><div class="l">Cấp bậc</div></div>
+      </div>
+      <div style="margin-top:14px;">
+        <div class="progress-track" style="background:rgba(255,255,255,.25);"><div class="progress-fill" style="background:#fff;width:${progressToNext}%;"></div></div>
+        <p style="color:rgba(255,255,255,.75);font-size:11.5px;margin-top:6px;">${next? (next.min-state.points.total)+' điểm nữa để lên '+next.name : 'Bạn đã ở cấp bậc cao nhất!'}</p>
+      </div>
+    </div>
+
+    ${checkinBanner}
+
+    ${s ? `
+    <div class="grid-3" style="margin-top:14px;">
+      <div class="card metric-card"><div class="big">${s.intentionScore}%</div><div class="lab">Ý định</div></div>
+      <div class="card metric-card"><div class="big">${s.behaviorScore}%</div><div class="lab">Hành động</div></div>
+      <div class="card metric-card"><div class="big ${s.gap>10?'gap-pos':(s.gap<-2?'gap-neg':'gap-neutral')}">${s.gap>0?'+':''}${s.gap}%</div><div class="lab">Khoảng cách</div></div>
+    </div>` : `
+    <div class="card" style="margin-top:14px;">
+      <div class="empty-state"><div class="em">📋</div><p>Hoàn thành khảo sát ban đầu để EcoReminder cá nhân hóa nhiệm vụ cho bạn.</p>
+      <button class="btn btn-primary btn-sm" style="margin-top:12px;" onclick="startSurvey('initial')">Làm khảo sát ngay</button></div>
+    </div>`}
+
+    <div class="section-title"><h3>Nhiệm vụ hôm nay (${doneToday}/${todayTasks.length})</h3><button class="link-btn" onclick="switchTab('tasks')">Xem tất cả</button></div>
+    <div class="card">${todayTasks.slice(0,3).map(t=>taskCardHTML(t)).join('')}</div>
+
+    ${barrierBlock}
+
+    <div class="section-title"><h3>Thử thách & cam kết đang tham gia</h3><button class="link-btn" onclick="switchTab('progress')">Xem tất cả</button></div>
+    <div class="card">${challengeSummaryHTML()}</div>
+  `;
+}
+function taskCardHTML(t){
+  const icon = t.diff==='easy'?'🍃':(t.diff==='medium'?'🌿':'🌳');
+  let actions = '';
+  if(t.status==='pending' || t.status==='replaced_from'){
+    actions = `<div class="task-actions">
+      <button class="btn btn-primary btn-sm" onclick="completeTask('${todayStr()}','${t.instId}')">Hoàn thành</button>
+      <button class="btn btn-ghost btn-sm" onclick="openFailureModal('${t.instId}')">Chưa thực hiện</button>
+    </div>`;
+  } else if(t.status==='completed'){
+    actions = `<div class="task-done-badge">✔ Đã hoàn thành · +${t.points} điểm</div>`;
+  } else if(t.status==='not_completed'){
+    const r = FAILURE_REASONS.find(x=>x.id===t.failureReason);
+    actions = `<div class="task-done-badge no">✕ Chưa thực hiện — ${r?r.label:''}</div><p style="font-size:12px;margin-top:4px;">${r?r.hint:''}</p>`;
+  }
+  return `<div class="task-card">
+    <div class="task-badge ${t.diff}">${icon}</div>
+    <div class="task-main">
+      <h4>${t.title}</h4>
+      <div class="task-meta"><span class="tag">${t.slot}</span><span class="tag">${t.est}</span><span class="tag">+${t.points} điểm</span></div>
+      ${actions}
+    </div>
+  </div>`;
+}
+function challengeSummaryHTML(){
+  const active = state.challenges.active;
+  if(!active.length) return `<div class="empty-state"><div class="em">🏁</div><p>Bạn chưa tham gia thử thách nào. Hãy bắt đầu ở tab Tiến trình!</p></div>`;
+  return active.map(c=>{
+    const total = c.progress.length;
+    const done = c.progress.filter(Boolean).length;
+    return `<div style="padding:10px 0;border-bottom:1px solid var(--line);">
+      <div style="display:flex;justify-content:space-between;"><h4 style="font-size:14px;">${challengeName(c.type)}</h4><span style="font-size:12.5px;font-weight:700;color:var(--moss);">${done}/${total} ngày</span></div>
+      <div class="progress-track" style="margin-top:8px;"><div class="progress-fill" style="width:${(done/total)*100}%;"></div></div>
+    </div>`;
+  }).join('');
+}
+function challengeName(type){ return {c7:'Green Starter · 7 ngày', c14:'Green Habit · 14 ngày', c30:'Eco Lifestyle · 30 ngày'}[type]||type; }
+
+/* =========================================================================
+   RENDER: TASKS TAB
+   ========================================================================= */
+function renderTasksView(){
+  const el = document.getElementById('viewTasks');
+  const todayTasks = getTodayTasks();
+  el.innerHTML = `
+    <div class="view-header"><h2>Nhiệm vụ hôm nay</h2><p>${new Date().toLocaleDateString('vi-VN',{weekday:'long', day:'numeric', month:'long'})}</p></div>
+    <div class="card">${todayTasks.map(t=>taskCardWithReplaceHTML(t)).join('')}</div>
+    <div class="card" style="margin-top:14px;">
+      <h3 style="font-size:15px;margin-bottom:8px;">Vì sao nhiệm vụ này?</h3>
+      <p style="font-size:13px;">Nhiệm vụ được chọn dựa trên mục tiêu và rào cản bạn đã chia sẻ trong khảo sát — không lặp lại quá nhiều ngày liên tiếp, trừ khi liên quan trực tiếp đến mục tiêu của bạn.</p>
+    </div>
+  `;
+}
+function taskCardWithReplaceHTML(t){
+  let html = taskCardHTML(t);
+  if(t.status==='pending'){
+    html = html.replace('</div>\n  </div>', `<button class="link-btn" style="margin-top:8px;font-size:12px;" onclick="replaceTask('${todayStr()}','${t.instId}')">Đổi nhiệm vụ khác</button></div>\n  </div>`);
+  }
+  return html;
+}
+
+/* =========================================================================
+   FAILURE MODAL
+   ========================================================================= */
+function openFailureModal(instId){
+  const t = getTodayTasks().find(x=>x.instId===instId);
+  uiState.failureSelected = null;
+  const html = `
+    <div class="modal-backdrop" onclick="if(event.target===this) closeModal()">
+      <div class="modal-sheet">
+        <h3>Vì sao bạn chưa thực hiện được?</h3>
+        <p style="margin-bottom:14px;font-size:13.5px;">Không sao cả — mỗi rào cản đều có cách vượt qua. Chọn lý do gần nhất nhé.</p>
+        <div id="reasonList">${FAILURE_REASONS.map(r=>`<button class="reason-opt" onclick="selectReason('${r.id}')" data-id="${r.id}">${r.label}</button>`).join('')}</div>
+        <div id="reasonHint"></div>
+        <textarea id="reasonNote" placeholder="Ghi chú thêm (không bắt buộc)" style="width:100%;margin-top:10px;padding:10px;border-radius:8px;border:1.5px solid var(--line);font-size:13.5px;" rows="2"></textarea>
+        <div style="display:flex;gap:10px;margin-top:16px;">
+          <button class="btn btn-ghost btn-block" onclick="closeModal()">Đóng</button>
+          <button class="btn btn-primary btn-block" id="reasonSubmitBtn" disabled onclick="submitFailure('${instId}')">Gửi</button>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('modalRoot').innerHTML = html;
+}
+function selectReason(id){
+  uiState.failureSelected = id;
+  document.querySelectorAll('.reason-opt').forEach(b=>b.classList.toggle('selected', b.dataset.id===id));
+  const r = FAILURE_REASONS.find(x=>x.id===id);
+  document.getElementById('reasonHint').innerHTML = `<div class="notice-banner" style="margin-top:10px;"><span>💡</span><p>${r.hint}${r.id==='dontKnow'?' — mở Góc Kiến thức để tìm hiểu thêm.':''}${r.id==='notSuitable'?' Bạn có thể bấm "Đổi nhiệm vụ khác" ở màn hình nhiệm vụ.':''}</p></div>`;
+  document.getElementById('reasonSubmitBtn').disabled = false;
+}
+function submitFailure(instId){
+  const note = document.getElementById('reasonNote').value.trim();
+  markNotCompleted(todayStr(), instId, uiState.failureSelected, note);
+  closeModal();
+  toast('Đã ghi nhận. Hãy thử lại vào lần sau nhé!', '🌱');
+}
+function closeModal(){ document.getElementById('modalRoot').innerHTML=''; }
+
+/* =========================================================================
+   RENDER: JOURNAL TAB
+   ========================================================================= */
+let journalSubTab = 'log';
+function renderJournalView(){
+  const el = document.getElementById('viewJournal');
+  el.innerHTML = `
+    <div class="view-header"><h2>Ghi nhận</h2><p>Nhật ký xanh, hành động tự do và Eco Playground</p></div>
+    <div class="tab-pills">
+      <button class="tab-pill ${journalSubTab==='log'?'active':''}" onclick="setJournalSub('log')">Nhật ký xanh</button>
+      <button class="tab-pill ${journalSubTab==='free'?'active':''}" onclick="setJournalSub('free')">Hành động tự do</button>
+      <button class="tab-pill ${journalSubTab==='games'?'active':''}" onclick="setJournalSub('games')">Eco Playground</button>
+    </div>
+    <div id="journalSubContent"></div>
+  `;
+  renderJournalSub();
+}
+function setJournalSub(t){ journalSubTab=t; renderJournalView(); }
+function renderJournalSub(){
+  const el = document.getElementById('journalSubContent');
+  if(journalSubTab==='log'){
+    if(!state.journal.length){
+      el.innerHTML = `<div class="card"><div class="empty-state"><div class="em">📗</div><p>Bạn chưa có hành động nào được ghi nhận.</p></div></div>`;
+      return;
+    }
+    el.innerHTML = `<div class="card">${state.journal.map(j=>{
+      const {d,m} = fmtDate(j.date+'T00:00:00');
+      return `<div class="journal-entry">
+        <div class="journal-date"><div class="d">${d}</div><div class="m">${m}</div></div>
+        <div style="flex:1;">
+          <h4 style="font-size:14px;font-weight:600;">${j.action}</h4>
+          ${j.note?`<p style="font-size:12.5px;margin-top:3px;">${j.note}</p>`:''}
+          ${j.barrier?`<span class="tag" style="margin-top:6px;display:inline-block;">${BARRIER_LABEL[j.barrier]||j.barrier}</span>`:''}
+          ${j.photo?`<img class="journal-photo" src="${j.photo}">`:''}
+          ${j.points?`<div style="margin-top:6px;font-size:12px;font-weight:700;color:var(--moss);">+${j.points} điểm</div>`:''}
+        </div>
+      </div>`;
+    }).join('')}</div>`;
+  } else if(journalSubTab==='free'){
+    el.innerHTML = `<div class="card">
+        <h3 style="font-size:15px;margin-bottom:12px;">Ghi nhận một hành động xanh tự do</h3>
+      <p style="font-size:12.5px;margin-bottom:12px;">Tối đa 3 hành động tự do được cộng điểm mỗi ngày, để tránh farm điểm.</p>
+      <div class="field"><label>Hành động</label><input type="text" id="freeAction" placeholder="Ví dụ: Từ chối túi ni-lông khi mua trái cây"></div>
+      <div class="field"><label>Ghi chú (không bắt buộc)</label><textarea id="freeNote" rows="2" style="width:100%;padding:10px;border-radius:8px;border:1.5px solid var(--line);"></textarea></div>
+      <div class="field"><label>Rào cản gặp phải (nếu có)</label>
+        <select id="freeBarrier"><option value="">— Không có —</option>${BARRIER_KEYS.map(k=>`<option value="${k}">${BARRIER_LABEL[k]}</option>`).join('')}</select>
+      </div>
+      <div class="field"><label>Ảnh minh chứng (không bắt buộc)</label><input type="file" id="freePhoto" accept="image/*"></div>
+      <button class="btn btn-primary btn-block" onclick="submitFreeAction()">Ghi nhận</button>
+    </div>`;
+  } else if(journalSubTab==='games'){
+    renderGamesTab(el);
+  }
+}
+function submitFreeAction(){
+  const action = document.getElementById('freeAction').value.trim();
+  if(!action){ toast('Hãy nhập hành động bạn đã thực hiện.', '⚠️'); return; }
+  const note = document.getElementById('freeNote').value.trim();
+  const barrier = document.getElementById('freeBarrier').value;
+  const fileInput = document.getElementById('freePhoto');
+  const file = fileInput.files[0];
+  function finish(photo){
+    addJournalEntry({action, note, barrier: barrier||null, free:true, photo: photo||null,
+      points: (state.journal.filter(j=>j.date===todayStr()&&j.free).length<3)?5:0});
+    markDayActive();
+    const willEarn = state.journal.filter(j=>j.date===todayStr()&&j.free).length<=3;
+    render(); switchTab('journal'); journalSubTab='log'; renderJournalView();
+    toast('Đã ghi nhận hành động của bạn!', '🌿');
+  }
+  if(file){
+    const reader = new FileReader();
+    reader.onload = e=>finish(e.target.result);
+    reader.readAsDataURL(file);
+  } else { finish(null); }
+}
+
+/* ---- Eco Playground ---- */
+let gameSubTab = 'sort';
+function renderGamesTab(el){
+  const tree = treeStageInfo();
+  el.innerHTML = `
+    <div class="card">
+      <div class="tab-pills" style="margin-bottom:10px;">
+        <button class="tab-pill ${gameSubTab==='sort'?'active':''}" onclick="setGameSub('sort')">Eco Sort</button>
+        <button class="tab-pill ${gameSubTab==='choice'?'active':''}" onclick="setGameSub('choice')">Eco Choice</button>
+        <button class="tab-pill ${gameSubTab==='tree'?'active':''}" onclick="setGameSub('tree')">My Eco Tree</button>
+      </div>
+      <div id="gameSubContent"></div>
+    </div>`;
+  renderGameSub();
+}
+function setGameSub(t){ gameSubTab=t; renderGameSub(); }
+function renderGameSub(){
+    const c = document.getElementById('gameSubContent');
+  if(!c) return;
+  if(gameSubTab==='sort') renderEcoSort(c);
+  else if(gameSubTab==='choice') renderEcoChoice(c);
+  else renderEcoTree(c);
+}
+let sortState = null;
+function renderEcoSort(c){
+  if(!sortState){
+    const items = [...SORT_ITEMS].sort(()=>Math.random()-.5).slice(0,10).map((x,i)=>({...x, id:i, done:false}));
+    sortState = {items, selected:null, correct:0, wrong:0};
+  }
+  const remaining = sortState.items.filter(x=>!x.done);
+  c.innerHTML = `
+    <p style="font-size:13px;margin-bottom:6px;">Chọn một vật phẩm rồi bấm đúng thùng chứa. Đúng ${sortState.correct} · Sai ${sortState.wrong}</p>
+    <div class="eco-sort-board">${SORT_BINS.map(b=>`<div class="sort-bin ${sortState.selected!==null?'target':''}" onclick="ecoSortDrop('${b.id}')"><div style="font-size:22px;">${b.em}</div><div style="font-size:12px;font-weight:700;margin-top:4px;">${b.label}</div></div>`).join('')}</div>
+    <div class="sort-item-pool">${remaining.map(it=>`<button class="sort-item ${sortState.selected===it.id?'selected':''}" onclick="ecoSortSelect(${it.id})">${it.n}</button>`).join('')}</div>
+    ${remaining.length===0?`<div style="margin-top:14px;text-align:center;">
+      <p style="font-weight:700;color:var(--moss-dark);">Hoàn thành! Độ chính xác: ${Math.round((sortState.correct/(sortState.correct+sortState.wrong||1))*100)}%</p>
+      <button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="claimEcoSortReward()">Nhận thưởng</button>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="sortState=null; renderGameSub();">Chơi lại</button>
+    </div>`:''}
+  `;
+}
+function ecoSortSelect(id){ sortState.selected = (sortState.selected===id)?null:id; renderGameSub(); }
+function ecoSortDrop(binId){
+  if(sortState.selected===null){ toast('Hãy chọn một vật phẩm trước.', 'ℹ️'); return; }
+  const item = sortState.items.find(x=>x.id===sortState.selected);
+  if(!item) return;
+  if(item.bin===binId){ sortState.correct++; toast(item.n+' — chính xác!', '✅'); }
+  else { sortState.wrong++; toast(item.n+' thuộc nhóm khác đó!', '❌'); }
+  item.done = true; sortState.selected = null;
+  renderGameSub();
+}
+function claimEcoSortReward(){
+  const t = todayStr();
+  const acc = sortState.correct/(sortState.correct+sortState.wrong||1);
+  if(state.games.ecoSortLastReward===t){ toast('Bạn đã nhận thưởng Eco Sort hôm nay rồi.', 'ℹ️'); return; }
+  if(acc>=0.9){ addPoints(10,'Eco Sort — độ chính xác cao'); state.games.ecoSortLastReward=t; persist('games'); toast('Tuyệt vời! +10 Eco Point','🎉'); }
+  else { toast('Cần độ chính xác từ 90% trở lên để nhận thưởng. Thử lại nhé!','ℹ️'); }
+  markDayActive(); render();
+}
+let choiceState = null;
+function renderEcoChoice(c){
+  if(!choiceState) choiceState = {idx:0, answered:false, lastVal:null, scoreGood:0};
+  if(choiceState.idx>=CHOICE_SCENARIOS.length){
+    c.innerHTML = `<div style="text-align:center;padding:10px 0;">
+      <p style="font-weight:700;color:var(--moss-dark);">Hoàn thành 5 tình huống!</p>
+      <button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="claimEcoChoiceReward()">Nhận thưởng</button>
+      <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="choiceState=null; renderGameSub();">Chơi lại</button>
+    </div>`;
+    return;
+  }
+  const s = CHOICE_SCENARIOS[choiceState.idx];
+  c.innerHTML = `<p style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;">Tình huống ${choiceState.idx+1}/5</p>
+    <p class="qtext" style="font-size:14.5px;margin-bottom:12px;">${s.q}</p>
+    ${s.opts.map((o,i)=>`<button class="scenario-opt" onclick="ecoChoicePick('${o.v}')" ${choiceState.answered?'disabled':''}>${o.t}</button>`).join('')}
+    ${choiceState.answered?`<div class="notice-banner" style="margin-top:10px;"><span>💬</span><p>${CHOICE_FEEDBACK[choiceState.lastVal]}</p></div>
+      <button class="btn btn-primary btn-block" style="margin-top:10px;" onclick="ecoChoiceNext()">Tiếp tục</button>`:''}
+  `;
+}
+function ecoChoicePick(v){ choiceState.answered=true; choiceState.lastVal=v; if(v==='best'||v==='good') choiceState.scoreGood++; renderGameSub(); }
+function ecoChoiceNext(){ choiceState.idx++; choiceState.answered=false; renderGameSub(); }
+function claimEcoChoiceReward(){
+  const t = todayStr();
+  if(state.games.ecoChoiceLastReward===t){ toast('Bạn đã nhận thưởng Eco Choice hôm nay rồi.', 'ℹ️'); return; }
+  addPoints(10,'Eco Choice hoàn thành');
+  state.games.ecoChoiceLastReward=t; persist('games');
+  markDayActive();
+  toast('Cảm ơn bạn đã tham gia! +10 Eco Point','🎉');
+  render();
+}
+function renderEcoTree(c){
+  const tree = treeStageInfo();
+  c.innerHTML = `
+    <div class="tree-stage">${tree.em}</div>
+    <p style="text-align:center;font-weight:700;color:var(--moss-dark);">${tree.name}</p>
+    <p style="text-align:center;font-size:12.5px;margin-top:4px;">${tree.gp} Growth Point tích lũy</p>
+    <p style="text-align:center;font-size:12px;margin-top:10px;">Cây lớn lên nhờ hành động thực tế: hoàn thành nhiệm vụ +10 GP, thử thách +25 GP, duy trì Streak +20 GP. Không "chết" nếu bạn bỏ lỡ vài ngày.</p>
+  `;
+}
+
+/* =========================================================================
+   RENDER: PROGRESS TAB
+   ========================================================================= */
+let progressSubTab = 'stats';
+function renderProgressView(){
+  const el = document.getElementById('viewProgress');
+  el.innerHTML = `
+    <div class="view-header"><h2>Tiến trình</h2><p>Thống kê, thử thách, cam kết, cấp bậc và huy hiệu</p></div>
+    <div class="tab-pills">
+      <button class="tab-pill ${progressSubTab==='stats'?'active':''}" onclick="setProgressSub('stats')">Thống kê</button>
+      <button class="tab-pill ${progressSubTab==='challenges'?'active':''}" onclick="setProgressSub('challenges')">Thử thách</button>
+      <button class="tab-pill ${progressSubTab==='commitments'?'active':''}" onclick="setProgressSub('commitments')">Cam kết</button>
+      <button class="tab-pill ${progressSubTab==='badges'?'active':''}" onclick="setProgressSub('badges')">Huy hiệu</button>
+      <button class="tab-pill ${progressSubTab==='knowledge'?'active':''}" onclick="setProgressSub('knowledge')">Kiến thức</button>
+    </div>
+    <div id="progressSubContent"></div>
+  `;
+  renderProgressSub();
+}
+function setProgressSub(t){ progressSubTab=t; renderProgressView(); }
+function renderProgressSub(){
+  const c = document.getElementById('progressSubContent');
+  if(progressSubTab==='stats') renderStats(c);
+  else if(progressSubTab==='challenges') renderChallenges(c);
+  else if(progressSubTab==='commitments') renderCommitments(c);
+  else if(progressSubTab==='badges') renderBadgesTab(c);
+  else if(progressSubTab==='knowledge') renderKnowledgeTab(c);
+}
+function renderStats(c){
+  // completion trend last 7 days
+  const days = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const key = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+    const list = state.tasks.byDate[key]||[];
+    const done = list.filter(t=>t.status==='completed').length;
+    days.push({key, done, label:d.toLocaleDateString('vi-VN',{weekday:'short'}).replace('Th ','T')});
+  }
+  const maxDone = Math.max(1, ...days.map(d=>d.done));
+  const hasAnyTask = Object.keys(state.tasks.byDate).length>0;
+
+  // barrier frequency from not_completed reasons
+  const reasonCounts = {};
+  Object.values(state.tasks.byDate).flat().forEach(t=>{ if(t.status==='not_completed'){ reasonCounts[t.failureReason]=(reasonCounts[t.failureReason]||0)+1; } });
+  const reasonEntries = Object.entries(reasonCounts).sort((a,b)=>b[1]-a[1]);
+  const maxReason = Math.max(1, ...reasonEntries.map(e=>e[1]));
+
+  let compareBlock = '';
+  if(state.surveyInitial && state.surveyPost){
+    const a = state.surveyInitial, b = state.surveyPost;
+    compareBlock = `<div class="card">
+      <h3 style="font-size:15px;margin-bottom:12px;">So sánh trước / sau</h3>
+      ${['intentionScore','behaviorScore'].map(k=>{
+        const label = k==='intentionScore'?'Ý định':'Hành động';
+        return `<div class="hbar-row"><div class="hbar-label">${label} (trước)</div><div class="hbar-track"><div class="hbar-fill" style="width:${a[k]}%;background:var(--sky);"></div></div><div class="hbar-val">${a[k]}%</div></div>
+        <div class="hbar-row"><div class="hbar-label">${label} (sau)</div><div class="hbar-track"><div class="hbar-fill" style="width:${b[k]}%;"></div></div><div class="hbar-val">${b[k]}%</div></div>`;
+      }).join('')}
+      <p style="font-size:12.5px;margin-top:8px;">Khoảng cách Ý định–Hành động: ${a.gap}% → ${b.gap}% ${b.gap<a.gap?'(đã thu hẹp 🎉)':''}</p>
+    </div>`;
+  } else if(state.surveyInitial){
+    compareBlock = `<div class="card"><div class="empty-state"><div class="em">📊</div><p>Chưa đủ dữ liệu để thống kê. Hãy tiếp tục ghi nhận các hành động của bạn nhé!</p>
+      <button class="btn btn-soft btn-sm" style="margin-top:10px;" onclick="startSurvey('post')">Làm khảo sát sau</button></div></div>`;
+  }
+
+  c.innerHTML = `
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:4px;">Nhiệm vụ hoàn thành — 7 ngày qua</h3>
+      ${hasAnyTask ? `<div class="bar-chart">${days.map(d=>`<div class="col"><div class="bar" style="height:${(d.done/maxDone)*90+6}px;"></div><div class="lbl">${d.label}</div></div>`).join('')}</div>`
+        : `<div class="empty-state"><div class="em">📈</div><p>Chưa đủ dữ liệu để thống kê. Hãy tiếp tục ghi nhận các hành động của bạn nhé!</p></div>`}
+    </div>
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:10px;">Rào cản gặp phải nhiều nhất</h3>
+      ${reasonEntries.length? reasonEntries.map(([id,count])=>{
+        const r = FAILURE_REASONS.find(x=>x.id===id);
+        return `<div class="hbar-row"><div class="hbar-label">${r?r.label:id}</div><div class="hbar-track"><div class="hbar-fill" style="width:${(count/maxReason)*100}%;"></div></div><div class="hbar-val">${count}</div></div>`;
+      }).join('') : `<div class="empty-state"><div class="em">🧩</div><p>Chưa đủ dữ liệu để thống kê. Hãy tiếp tục ghi nhận các hành động của bạn nhé!</p></div>`}
+    </div>
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:6px;">Eco Point tích lũy</h3>
+      <div class="metric-card" style="text-align:left;"><div class="big" style="font-size:26px;">${state.points.total}</div><div class="lab">Kỷ lục Streak: ${state.streak.longest} ngày · Huy hiệu: ${state.badges.length}/${BADGES_DEF.length}</div></div>
+    </div>
+    ${compareBlock}
+  `;
+}
+function renderChallenges(c){
+  const types = [
+    {type:'c7', name:'Green Starter', days:7, desc:'Mỗi ngày một hành động đơn giản.', reward:30},
+    {type:'c14', name:'Green Habit', days:14, desc:'Nâng dần độ khó, xây thói quen bền hơn.', reward:60},
+    {type:'c30', name:'Eco Lifestyle', days:30, desc:'Reduce → Reuse → Recycle → Influence.', reward:100},
+  ];
+  c.innerHTML = types.map(ch=>{
+    const active = state.challenges.active.find(a=>a.type===ch.type);
+    let body;
+    if(active){
+      body = `<div class="challenge-days">${active.progress.map((done,i)=>`<div class="challenge-day ${done?'done':''} ${i===active.progress.filter(Boolean).length?'today':''}">${i+1}</div>`).join('')}</div>
+      ${!active.completed? `<button class="btn btn-primary btn-sm" style="margin-top:12px;" onclick="checkChallengeDay('${ch.type}')">Đánh dấu hôm nay đã hoàn thành</button>`
+          : `<p style="margin-top:10px;font-weight:700;color:var(--moss-dark);">🎉 Đã hoàn thành! +${ch.reward} điểm thưởng</p>`}`;
+    } else {
+      body = `<button class="btn btn-soft btn-sm" style="margin-top:12px;" onclick="startChallenge('${ch.type}',${ch.days})">Bắt đầu thử thách</button>`;
+    }
+    return `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+        <div><h3 style="font-size:16px;">${ch.name} · ${ch.days} ngày</h3><p style="font-size:13px;margin-top:4px;">${ch.desc}</p></div>
+        <span class="tag" style="background:var(--amber-pale);border-color:var(--amber);color:#7A5A16;">+${ch.reward} điểm</span>
+      </div>
+      ${body}
+    </div>`;
+  }).join('');
+}
+function startChallenge(type, days){
+  state.challenges.active.push({id:uid(), type, startDate:todayStr(), progress:new Array(days).fill(false), completed:false});
+  persist('challenges');
+  toast('Thử thách đã bắt đầu — cố lên nhé!', '🚀');
+  renderProgressSub();
+}
+function checkChallengeDay(type){
+  const c = state.challenges.active.find(a=>a.type===type);
+  if(!c || c.completed) return;
+  const idx = c.progress.findIndex(x=>!x);
+  if(idx<0) return;
+  c.progress[idx] = true;
+  markDayActive();
+  addGrowthPoints(5);
+  if(c.progress.every(Boolean)){
+    c.completed = true;
+    const rewardMap = {c7:30, c14:60, c30:100};
+    addPoints(rewardMap[type], 'Hoàn thành thử thách '+challengeName(type));
+    addGrowthPoints(25);
+    if(type==='c7') unlockBadge('green7');
+    if(type==='c14') unlockBadge('habit14');
+    if(type==='c30') unlockBadge('sustain30');
+    toast('Chúc mừng! Bạn đã hoàn thành thử thách!', '🏆');
+  } else { toast('Đã đánh dấu ngày hôm nay!', '✅'); }
+  persist('challenges');
+  renderProgressSub();
+}
+function renderCommitments(c){
+  const list = state.challenges.commitments;
+  const options = [
+    'Tôi cam kết mang bình nước khi đi học/ra ngoài', 'Tôi cam kết mang túi tái sử dụng khi có nhu cầu mua sắm',
+    'Tôi cam kết hạn chế ống hút nhựa khi không cần thiết', 'Tôi cam kết tái sử dụng vật dụng còn dùng tốt',
+    'Tôi cam kết thực hiện ít nhất một hành động xanh mỗi ngày'];
+  c.innerHTML = `
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:10px;">Tạo cam kết mới</h3>
+      <div class="check-list" id="commitOptions">${options.map((o,i)=>`<label><input type="checkbox" value="${i}"><span>${o}</span></label>`).join('')}</div>
+      <div class="field" style="margin-top:12px;"><label>Thời hạn</label>
+        <select id="commitDuration"><option value="7">7 ngày</option><option value="14">14 ngày</option><option value="30">30 ngày</option></select>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="createCommitments('${options.join('|')}')">Tạo cam kết (tối đa 3)</button>
+    </div>
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:10px;">Cam kết của bạn</h3>
+      ${list.length? list.map(cm=>{
+        const total = cm.checks.length;
+        const done = cm.checks.filter(Boolean).length;
+        const canCheckToday = cm.checks[cm.checks.length-1]===false || cm.checks.length===0;
+        return `<div style="padding:10px 0;border-bottom:1px solid var(--line);">
+          <h4 style="font-size:13.5px;font-weight:600;">${cm.text}</h4>
+          <div class="progress-track" style="margin-top:8px;"><div class="progress-fill" style="width:${(done/total)*100}%;"></div></div>
+          <div style="display:flex;justify-content:space-between;margin-top:6px;"><span style="font-size:11.5px;color:var(--ink-soft);">${done}/${total} ngày</span>
+          ${!cm.completed?`<button class="link-btn" onclick="checkCommitment('${cm.id}')">Đánh dấu hôm nay</button>`:'<span style="font-size:11.5px;font-weight:700;color:var(--moss);">Hoàn thành 🎉</span>'}</div>
+        </div>`;
+      }).join('') : `<div class="empty-state"><div class="em">🤝</div><p>Bạn chưa có cam kết nào.</p></div>`}
+    </div>
+  `;
+}
+function createCommitments(optionsStr){
+  const options = optionsStr.split('|');
+  const checked = Array.from(document.querySelectorAll('#commitOptions input:checked')).map(x=>parseInt(x.value));
+  if(!checked.length){ toast('Hãy chọn ít nhất một cam kết.', '⚠️'); return; }
+  if(checked.length>3){ toast('Chỉ chọn tối đa 3 cam kết.', '⚠️'); return; }
+  const duration = parseInt(document.getElementById('commitDuration').value);
+  checked.forEach(i=>{
+    state.challenges.commitments.push({id:uid(), text:options[i], duration, startDate:todayStr(), checks:new Array(duration).fill(false), completed:false});
+  });
+  persist('challenges');
+  toast('Đã tạo cam kết mới!', '🤝');
+  renderProgressSub();
+}
+function checkCommitment(id){
+  const cm = state.challenges.commitments.find(x=>x.id===id);
+  if(!cm || cm.completed) return;
+  const idx = cm.checks.findIndex(x=>!x);
+  if(idx<0) return;
+  cm.checks[idx]=true;
+  if(cm.checks.every(Boolean)) cm.completed = true;
+  markDayActive();
+  persist('challenges');
+  toast('Đã đánh dấu hôm nay!', '✅');
+  renderProgressSub();
+}
+function updateCommitmentChecks(){} // commitments are checked manually by user per spec (self-report)
+
+function renderBadgesTab(c){
+  const level = levelOf(state.points.total);
+  c.innerHTML = `
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:4px;">Cấp bậc hiện tại: ${level.name}</h3>
+      <p style="font-size:12.5px;">Cấp bậc phản ánh nỗ lực và tiến trình, không phải đánh giá đạo đức con người.</p>
+      <div style="margin-top:12px;display:flex;flex-direction:column;gap:8px;">
+        ${LEVELS.map(l=>`<div style="display:flex;justify-content:space-between;font-size:13px;padding:8px 10px;border-radius:8px;background:${l.name===level.name?'var(--moss-pale)':'transparent'};">
+          <span style="font-weight:${l.name===level.name?'700':'500'};">${l.name}</span><span style="color:var(--ink-soft);">${l.min}+ điểm</span></div>`).join('')}
+      </div>
+    </div>
+    <div class="card">
+      <h3 style="font-size:15px;margin-bottom:12px;">Huy hiệu (${state.badges.length}/${BADGES_DEF.length})</h3>
+      <div class="badge-grid">${BADGES_DEF.map(b=>{
+        const unlocked = state.badges.includes(b.id);
+        return `<div class="badge-tile ${unlocked?'unlocked':''}" title="${b.desc}"><div class="em">${b.em}</div><div class="n">${b.name}</div></div>`;
+      }).join('')}</div>
+    </div>
+  `;
+}
+
+function renderKnowledgeTab(c){
+  c.innerHTML = `<div class="card">${LESSONS.map(l=>{
+    const read = state.games.knowledgeRead.includes(l.id);
+    return `<div class="lesson-card">
+      <div class="lesson-num">${l.id}</div>
+      <div class="lesson-body" style="flex:1;">
+        <h4>${l.title} ${read?'<span style="color:var(--moss);font-size:11px;">· Đã đọc</span>':''}</h4>
+        <p>${l.goal}</p>
+      </div>
+      <button class="btn btn-ghost btn-sm" onclick="openLesson(${l.id})">Đọc</button>
+    </div>`;
+  }).join('')}</div>`;
+}
+function openLesson(id){
+  const l = LESSONS.find(x=>x.id===id);
+  const html = `<div class="modal-backdrop" onclick="if(event.target===this) closeModal()">
+    <div class="modal-sheet">
+      <p style="font-size:11.5px;font-weight:700;color:var(--moss);margin-bottom:4px;">BÀI ${l.id}</p>
+      <h3 style="margin-bottom:14px;">${l.title}</h3>
+      <div class="lesson-detail-block"><h4>Mục tiêu bài học</h4><p>${l.goal}</p></div>
+      <div class="lesson-detail-block"><h4>Kiến thức nền tảng</h4><p>${l.core}</p></div>
+      <div class="lesson-detail-block"><h4>Ví dụ thực tế</h4><p>${l.example}</p></div>
+      <div class="lesson-detail-block"><h4>Hiểu lầm thường gặp</h4><p>${l.myth}</p></div>
+      <div class="lesson-detail-block"><h4>Mẹo áp dụng</h4><p>${l.tip}</p></div>
+      <div class="lesson-detail-block"><h4>Nhiệm vụ liên kết</h4>
+        <div class="task-meta">${l.linkedTasks.map(tid=>{const t=TASK_POOL.find(x=>x.id===tid); return t?`<span class="tag">${t.title}</span>`:'';}).join('')}</div>
+      </div>
+      <button class="btn btn-primary btn-block" onclick="markLessonRead(${l.id})">Đã đọc — làm Quiz nhanh (+3–5 điểm)</button>
+      <button class="btn btn-ghost btn-block" style="margin-top:8px;" onclick="closeModal()">Đóng</button>
+    </div>
+  </div>`;
+  document.getElementById('modalRoot').innerHTML = html;
+}
+function markLessonRead(id){
+  if(!state.games.knowledgeRead.includes(id)){
+    state.games.knowledgeRead.push(id);
+    persist('games');
+    if(state.games.knowledgeRead.length>=5) unlockBadge('learner');
+  }
+  openQuiz(id);
+}
+function openQuiz(id){
+  const quiz = LESSON_QUIZ[id];
+  const html = `<div class="modal-backdrop" onclick="if(event.target===this) closeModal()">
+    <div class="modal-sheet">
+      <h3 style="margin-bottom:14px;">Quiz nhanh</h3>
+      <p class="qtext" style="margin-bottom:12px;">${quiz.q}</p>
+      ${quiz.opts.map((o,i)=>`<button class="scenario-opt" onclick="answerQuiz(${id},${i})">${o}</button>`).join('')}
+    </div>
+  </div>`;
+  document.getElementById('modalRoot').innerHTML = html;
+}
+function answerQuiz(id, idx){
+  const quiz = LESSON_QUIZ[id];
+  const correct = idx===quiz.correct;
+  const t = todayStr();
+  let earned = 0;
+  if(correct){
+    earned = (state.games.lastQuizDate===t && state.games.quizzesToday>=5) ? 0 : 4;
+    if(earned){ addPoints(earned,'Quiz bài '+id); }
+  }
+  if(state.games.lastQuizDate!==t){ state.games.quizzesToday=0; state.games.lastQuizDate=t; }
+  state.games.quizzesToday++;
+  persist('games');
+  toast(correct? ('Chính xác! '+(earned?('+' +earned+' điểm'):'')) : 'Chưa đúng, không sao — bạn đã học thêm được điều mới!', correct?'✅':'💡');
+  closeModal();
+  render();
+}
+
+/* =========================================================================
+   RENDER: PROFILE TAB
+   ========================================================================= */
+let profileSubTab = 'info';
+function renderProfileView(){
+  const el = document.getElementById('viewProfile');
+  el.innerHTML = `
+    <div class="view-header"><h2>Hồ sơ</h2><p>Thông tin cá nhân, khảo sát và cài đặt</p></div>
+    <div class="tab-pills">
+      <button class="tab-pill ${profileSubTab==='info'?'active':''}" onclick="setProfileSub('info')">Thông tin</button>
+      <button class="tab-pill ${profileSubTab==='surveys'?'active':''}" onclick="setProfileSub('surveys')">Khảo sát</button>
+      <button class="tab-pill ${profileSubTab==='settings'?'active':''}" onclick="setProfileSub('settings')">Cài đặt</button>
+      <button class="tab-pill ${profileSubTab==='forum'?'active':''}" onclick="setProfileSub('forum')">Diễn đàn</button>
+    </div>
+    <div id="profileSubContent"></div>
+  `;
+  renderProfileSub();
+}
+function setProfileSub(t){ profileSubTab=t; renderProfileView(); }
+function renderProfileSub(){
+  const c = document.getElementById('profileSubContent');
+  const p = state.profile;
+  if(profileSubTab==='info'){
+    c.innerHTML = `
+      <div class="card" style="text-align:center;">
+        <div style="width:64px;height:64px;border-radius:50%;background:var(--moss-pale);display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 10px;">🌱</div>
+        <h3 style="font-size:18px;">${p.nickname}</h3>
+        <p style="font-size:12.5px;margin-top:2px;">${p.userGroup}</p>
+      </div>
+      <div class="grid-3">
+        <div class="card metric-card"><div class="big" style="font-size:22px;">${state.points.total}</div><div class="lab">Eco Point</div></div>
+        <div class="card metric-card"><div class="big" style="font-size:22px;">${state.streak.longest}</div><div class="lab">Kỷ lục Streak</div></div>
+        <div class="card metric-card"><div class="big" style="font-size:22px;">${state.badges.length}</div><div class="lab">Huy hiệu</div></div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:15px;margin-bottom:10px;">Mục tiêu cá nhân</h3>
+        <div class="chip-grid">${p.goals.map(g=>{ const goal=GOALS.find(x=>x.id===g); return `<span class="chip selected">${goal.name}</span>`; }).join('')}</div>
+        <button class="btn btn-ghost btn-sm" style="margin-top:12px;" onclick="openEditGoals()">Thay đổi mục tiêu</button>
+      </div>
+      <div class="card">
+        <h3 style="font-size:15px;margin-bottom:10px;">Nickname</h3>
+        <div class="field"><input type="text" id="editNickname" value="${p.nickname}"></div>
+        <button class="btn btn-primary btn-sm" onclick="saveNickname()">Lưu</button>
+      </div>
+    `;
+  } else if(profileSubTab==='surveys'){
+    c.innerHTML = `
+      <div class="card">
+        <h3 style="font-size:15px;margin-bottom:6px;">Khảo sát ban đầu</h3>
+        <p style="font-size:13px;">${state.surveyInitial? 'Đã hoàn thành · Ý thức '+state.surveyInitial.awarenessScore+'% ('+level5(state.surveyInitial.awarenessScore)+')':'Chưa hoàn thành'}</p>
+        ${!state.surveyInitial?`<button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="startSurvey('initial')">Làm khảo sát</button>`:''}
+      </div>
+      <div class="card">
+        <h3 style="font-size:15px;margin-bottom:6px;">Mini Check-in</h3>
+        <p style="font-size:13px;">Đã thực hiện ${state.checkins.length} lần.</p>
+        <button class="btn btn-ghost btn-sm" style="margin-top:10px;" onclick="openCheckin()">Check-in ngay</button>
+      </div>
+      <div class="card">
+        <h3 style="font-size:15px;margin-bottom:6px;">Khảo sát sau</h3>
+        <p style="font-size:13px;">${state.surveyPost?'Đã hoàn thành — xem so sánh ở tab Tiến trình › Thống kê.':'Chưa hoàn thành. Bạn có thể để sau nếu chưa sẵn sàng.'}</p>
+        <button class="btn btn-primary btn-sm" style="margin-top:10px;" onclick="startSurvey('post')">${state.surveyPost?'Làm lại':'Làm khảo sát sau'}</button>
+      </div>
+    `;
+  } else if(profileSubTab==='settings'){
+    const s = state.settings;
+    c.innerHTML = `
+      <div class="card">
+        <h3 style="font-size:15px;margin-bottom:10px;">Thông báo</h3>
+        <label style="display:flex;justify-content:space-between;align-items:center;font-size:14px;">
+          <span>Bật thông báo nhắc nhở</span><input type="checkbox" id="notifToggle" ${s.notifEnabled?'checked':''} onchange="toggleNotif(this.checked)">
+        </label>
+        <div class="field" style="margin-top:12px;"><label>Giờ nhắc chính</label><input type="time" id="notifTime" value="${s.notifTime}" onchange="setNotifTime(this.value)"></div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:15px;margin-bottom:10px;">Giao diện</h3>
+        <div class="chip-grid">
+          <button class="chip ${s.theme==='light'?'selected':''}" onclick="setTheme('light')">Light Mode</button>
+          <button class="chip ${s.theme==='dark'?'selected':''}" onclick="setTheme('dark')">Dark Mode</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3 style="font-size:15px;margin-bottom:10px;">Dữ liệu</h3>
+        <button class="btn btn-soft btn-block" onclick="exportData()">Xuất dữ liệu (JSON)</button>
+        <button class="btn btn-clay btn-block" style="margin-top:10px;" onclick="resetApp()">Xóa toàn bộ dữ liệu / Reset app</button>
+      </div>
+    `;
+  } else if(profileSubTab==='forum'){
+    c.innerHTML = `<div class="card">
+      <div class="empty-state">
+        <div class="em">💬</div>
+        <p style="font-weight:700;color:var(--ink);margin-bottom:6px;">Diễn đàn cần máy chủ thực</p>
+        <p>Đây là bản thử nghiệm chỉ dùng LocalStorage trên trình duyệt của bạn, nên diễn đàn nhiều người dùng chưa thể hoạt động thật ở đây — để tránh giả lập một tính năng backend không tồn tại. Ở phiên bản chính thức, tính năng này sẽ cần hệ thống kiểm duyệt và máy chủ riêng.</p>
+      </div>
+    </div>`;
+  }
+}
+function toggleNotif(v){ state.settings.notifEnabled=v; persist('settings'); }
+function setNotifTime(v){ state.settings.notifTime=v; persist('settings'); }
+function setTheme(t){ state.settings.theme=t; persist('settings'); applyTheme(); renderProfileSub(); }
+function applyTheme(){
+  let t = state.settings.theme;
+  if(t==='system'){ t = window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'; }
+  document.body.classList.toggle('dark', t==='dark');
+}
+function exportData(){
+  const all = {};
+  Object.keys(KEYS).forEach(k=>{ all[k]=state[k]; });
+  const blob = new Blob([JSON.stringify(all,null,2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'ecoreminder_data_'+todayStr()+'.json';
+  a.click();
+  toast('Đã xuất dữ liệu.', '📤');
+}
+function resetApp(){
+  const html = `<div class="modal-backdrop" onclick="if(event.target===this) closeModal()">
+    <div class="modal-sheet">
+      <h3>Xóa toàn bộ dữ liệu?</h3>
+      <p style="margin:10px 0;font-size:13.5px;">Hành động này sẽ xóa toàn bộ hồ sơ, khảo sát, nhiệm vụ, điểm và tiến trình đã lưu trên trình duyệt này. Không thể hoàn tác.</p>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-ghost btn-block" onclick="closeModal()">Hủy</button>
+        <button class="btn btn-clay btn-block" onclick="confirmReset()">Xóa toàn bộ</button>
+      </div>
+      </div></div>`;
+  document.getElementById('modalRoot').innerHTML = html;
+}
+function confirmReset(){
+  Object.values(KEYS).forEach(k=>localStorage.removeItem(k));
+  location.reload();
+}
+function openEditGoals(){
+  uiState.tempGoals = [...state.profile.goals];
+  const html = `<div class="modal-backdrop" onclick="if(event.target===this) closeModal()">
+    <div class="modal-sheet">
+      <h3 style="margin-bottom:12px;">Chọn tối đa 3 mục tiêu</h3>
+      <div class="chip-grid" id="goalEditGrid">${GOALS.map(g=>`<button class="chip ${uiState.tempGoals.includes(g.id)?'selected':''}" data-id="${g.id}" onclick="toggleGoalEdit('${g.id}')">${g.name}<small>${g.desc}</small></button>`).join('')}</div>
+      <button class="btn btn-primary btn-block" style="margin-top:16px;" onclick="saveGoals()">Lưu mục tiêu</button>
+    </div></div>`;
+  document.getElementById('modalRoot').innerHTML = html;
+}
+function toggleGoalEdit(id){
+  const i = uiState.tempGoals.indexOf(id);
+  if(i>=0) uiState.tempGoals.splice(i,1);
+  else { if(uiState.tempGoals.length>=3){ toast('Chỉ chọn tối đa 3 mục tiêu.', '⚠️'); return; } uiState.tempGoals.push(id); }
+  document.querySelectorAll('#goalEditGrid .chip').forEach(el=>el.classList.toggle('selected', uiState.tempGoals.includes(el.dataset.id)));
+}
+function saveGoals(){
+  if(!uiState.tempGoals.length){ toast('Hãy chọn ít nhất một mục tiêu.', '⚠️'); return; }
+  state.profile.goals = uiState.tempGoals;
+  persist('profile');
+  closeModal(); renderProfileSub();
+  toast('Đã cập nhật mục tiêu.', '🎯');
+}
+function saveNickname(){
+  const v = document.getElementById('editNickname').value.trim();
+  if(!v){ toast('Nickname không được để trống.', '⚠️'); return; }
+  state.profile.nickname = v;
+  persist('profile');
+  toast('Đã lưu.', '✅');
+  render();
+}
+
+/* =========================================================================
+   MINI CHECK-IN
+   ========================================================================= */
+function openCheckin(){
+  uiState.checkinAnswers = {};
+  uiState.checkinStep = 0;
+  renderCheckinModal();
+}
+function renderCheckinModal(){
+  const q = CHECKIN_QUESTIONS[uiState.checkinStep];
+  const html = `<div class="modal-backdrop" onclick="if(event.target===this) closeModal()">
+    <div class="modal-sheet">
+      <p style="font-size:11.5px;font-weight:700;color:var(--moss);margin-bottom:4px;">MINI CHECK-IN · ${uiState.checkinStep+1}/${CHECKIN_QUESTIONS.length}</p>
+      <h3 style="margin-bottom:14px;font-size:16.5px;">${q.text}</h3>
+      ${q.opts.map(o=>`<button class="scenario-opt" onclick="answerCheckin('${q.id}', '${o.replace(/'/g,"\\'")}')">${o}</button>`).join('')}
+    </div></div>`;
+  document.getElementById('modalRoot').innerHTML = html;
+}
+function answerCheckin(id, val){
+  uiState.checkinAnswers[id] = val;
+  uiState.checkinStep++;
+  if(uiState.checkinStep>=CHECKIN_QUESTIONS.length){
+    state.checkins.push({date:todayStr(), answers:uiState.checkinAnswers});
+    persist('checkins');
+    addPoints(5, 'Hoàn thành Mini Check-in');
+    closeModal();
+    toast('Cảm ơn bạn đã check-in! +5 điểm', '🙌');
+    render();
+  } else { renderCheckinModal(); }
+}
+
+/* =========================================================================
+   SURVEY WIZARD (dùng chung cho khảo sát ban đầu và khảo sát sau)
+   ========================================================================= */
+function startSurvey(mode){
+  uiState.surveyMode = mode; // 'initial' | 'post'
+  uiState.surveyAnswers = {};
+  uiState.surveyStepIdx = 0;
+  uiState.surveySteps = mode==='initial' ? SURVEY_STEPS : POST_STEPS;
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('onboarding').classList.remove('hidden');
+  renderSurveyStep();
+}
+function surveyProgressPct(){
+  return Math.round((uiState.surveyStepIdx/uiState.surveySteps.length)*100);
+}
+function renderSurveyStep(){
+  const wrap = document.getElementById('onboarding');
+  const step = uiState.surveySteps[uiState.surveyStepIdx];
+  let body = '';
+  if(step.type==='bg'){
+    body = step.questions.map((q,qi)=>`
+      <div class="likert-q"><p class="qtext">${q.text}</p>
+      ${q.opts.map((o,oi)=>`<button class="scenario-opt ${uiState.surveyAnswers['bg_'+qi]===oi?'selected':''}" onclick="setBgAnswer(${qi},${oi})">${o}</button>`).join('')}
+      </div>`).join('');
+  } else if(step.type==='likert'){
+    body = step.items.map((txt,i)=>{
+      const key = step.part+'_'+i;
+      const val = uiState.surveyAnswers[key]||0;
+      return `<div class="likert-q"><p class="qtext">${i+1}. ${txt}</p>
+        <div class="likert-scale">${step.scale.map((lab,li)=>`
+          <button class="likert-opt ${val===li+1?'selected':''}" onclick="setLikert('${key}',${li+1})"><span class="num">${li+1}</span>${lab}</button>`).join('')}
+        </div></div>`;
+    }).join('');
+  } else if(step.type==='scenario'){
+    body = step.scenarios.map((sc,si)=>{
+      const key = 'scenario_'+si;
+      const val = uiState.surveyAnswers[key];
+      const letters=['A','B','C','D'];
+      return `<div class="likert-q"><p style="font-weight:700;font-size:13px;color:var(--moss-dark);margin-bottom:4px;">${sc.title}</p>
+        <p class="qtext">${sc.text}</p>
+        ${sc.opts.map((o,oi)=>`<button class="scenario-opt ${val===letters[oi]?'selected':''}" onclick="setScenario(${si},'${letters[oi]}')"><b>${letters[oi]}.</b>${o}</button>`).join('')}
+      </div>`;
+    }).join('');
+  } else if(step.type==='checklist'){
+    body = `<div class="check-list">${step.options.map(o=>{
+      const arr = uiState.surveyAnswers[step.part+'_checked']||[];
+      return `<label><input type="checkbox" ${arr.includes(o.id)?'checked':''} onchange="toggleChecklist('${step.part}','${o.id}',${step.max||0})"><span>${o.t}</span></label>`;
+    }).join('')}</div>`;
+    } else if(step.type==='open'){
+    body = `<textarea rows="4" style="width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--line);font-size:14px;" placeholder="Chia sẻ của bạn (không bắt buộc)..." oninput="setOpen('${step.part}', this.value)">${uiState.surveyAnswers[step.part]||''}</textarea>`;
+  }
+
+  wrap.innerHTML = `
+    <div style="max-width:640px;width:100%;">
+      <div class="survey-progress-wrap" style="padding:0 0 14px;">
+        <div class="survey-progress-label"><span>${step.title}</span><span>${uiState.surveyStepIdx+1}/${uiState.surveySteps.length}</span></div>
+        <div class="progress-track"><div class="progress-fill" style="width:${surveyProgressPct()}%;"></div></div>
+      </div>
+      <div class="card">
+        ${step.sub?`<p style="font-size:12.5px;margin-bottom:10px;">${step.sub}</p>`:''}
+        ${body}
+      </div>
+      <div class="survey-nav">
+        <button class="btn btn-ghost" onclick="surveyBack()">${uiState.surveyStepIdx===0?'Hủy':'Quay lại'}</button>
+        <button class="btn btn-primary" onclick="surveyNext()">${uiState.surveyStepIdx===uiState.surveySteps.length-1?'Hoàn tất khảo sát':'Tiếp tục'}</button>
+      </div>
+    </div>
+  `;
+  window.scrollTo(0,0);
+}
+function setBgAnswer(qi, oi){ uiState.surveyAnswers['bg_'+qi]=oi; renderSurveyStep(); }
+function setLikert(key, val){ uiState.surveyAnswers[key]=val; renderSurveyStep(); }
+function setScenario(si, letter){ uiState.surveyAnswers['scenario_'+si]=letter; renderSurveyStep(); }
+function setOpen(part, val){ uiState.surveyAnswers[part]=val; }
+function toggleChecklist(part, id, max){
+  const key = part+'_checked';
+  let arr = uiState.surveyAnswers[key]||[];
+  if(arr.includes(id)) arr = arr.filter(x=>x!==id);
+  else { if(max && arr.length>=max){ toast('Chỉ chọn tối đa '+max+' mục.', '⚠️'); renderSurveyStep(); return; } arr.push(id); }
+  uiState.surveyAnswers[key]=arr;
+  renderSurveyStep();
+}
+function stepIsComplete(step){
+  if(step.type==='bg') return step.questions.every((q,qi)=>uiState.surveyAnswers['bg_'+qi]!==undefined);
+  if(step.type==='likert') return step.items.every((t,i)=>uiState.surveyAnswers[step.part+'_'+i]);
+  if(step.type==='scenario') return step.scenarios.every((s,i)=>uiState.surveyAnswers['scenario_'+i]);
+  return true; // checklist/open optional
+}
+function surveyBack(){
+  if(uiState.surveyStepIdx===0){
+    document.getElementById('onboarding').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    render();
+    return;
+  }
+  uiState.surveyStepIdx--; renderSurveyStep();
+}
+function surveyNext(){
+  const step = uiState.surveySteps[uiState.surveyStepIdx];
+  if(!stepIsComplete(step)){ toast('Vui lòng trả lời đầy đủ các câu trước khi tiếp tục.', '⚠️'); return; }
+  if(uiState.surveyStepIdx < uiState.surveySteps.length-1){ uiState.surveyStepIdx++; renderSurveyStep(); }
+  else finishSurvey();
+}
+function finishSurvey(){
+  const scores = computeSurveyScores(uiState.surveyAnswers);
+  const record = {answers:uiState.surveyAnswers, ...scores, completedAt:new Date().toISOString()};
+  if(uiState.surveyMode==='initial'){
+    state.surveyInitial = record;
+    persist('surveyInitial');
+    if(!state.profile.goals || !state.profile.goals.length){
+      document.getElementById('onboarding').classList.remove('hidden');
+      renderGoalPicker();
+      return;
+    }
+  } else {
+    state.surveyPost = record;
+    persist('surveyPost');
+    addPoints(10, 'Hoàn thành khảo sát sau');
+  }
+  document.getElementById('onboarding').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  toast('Cảm ơn bạn đã hoàn thành khảo sát!', '🎉');
+  switchTab(uiState.surveyMode==='initial'?'home':'progress');
+}
+
+/* =========================================================================
+   ONBOARDING FLOW
+   ========================================================================= */
+let obStep = 'welcome'; // welcome -> intro -> profile -> survey -> goals -> done
+function renderOnboarding(){
+  const wrap = document.getElementById('onboarding');
+  if(obStep==='welcome'){
+    wrap.innerHTML = `<div class="ob-card">
+      <div class="ob-hero">
+        <span class="ob-leaf">🌱</span>
+        <h1>Những hành động nhỏ hôm nay có thể trở thành thói quen xanh của ngày mai.</h1>
+        <p>EcoReminder giúp bạn nhận diện rào cản và biến ý định giảm nhựa thành hành động thật, từng bước một.</p>
+        <div class="ob-actions">
+          <button class="btn btn-amber" onclick="obStep='intro'; renderOnboarding();">Bắt đầu</button>
+          <button class="btn" style="background:rgba(255,255,255,.15);color:#fff;" onclick="obStep='intro2'; renderOnboarding();">Tìm hiểu thêm</button>
+        </div>
+      </div>
+    </div>`;
+  } else if(obStep==='intro2' || obStep==='intro'){
+    wrap.innerHTML = `<div class="ob-card">
+      <h2 style="margin-bottom:16px;">Cách EcoReminder đồng hành cùng bạn</h2>
+      <div class="ob-steps">
+        <div class="ob-step"><div class="ob-step-num">1</div><div><h4 style="font-size:14.5px;">Nhận diện rào cản</h4><p style="font-size:13px;margin-top:3px;">Tìm ra những khó khăn khiến bạn chưa thể duy trì hành động xanh.</p></div></div>
+        <div class="ob-step"><div class="ob-step-num">2</div><div><h4 style="font-size:14.5px;">Nhiệm vụ nhỏ, phù hợp</h4><p style="font-size:13px;margin-top:3px;">Thực hiện những nhiệm vụ nhỏ, phù hợp với cuộc sống hằng ngày của bạn.</p></div></div>
+        <div class="ob-step"><div class="ob-step-num">3</div><div><h4 style="font-size:14.5px;">Theo dõi tiến trình</h4><p style="font-size:13px;margin-top:3px;">Biến hành động nhỏ thành thói quen lâu dài, không phán xét khi bạn thất bại.</p></div></div>
+      </div>
+      <button class="btn btn-primary btn-block" style="margin-top:22px;" onclick="obStep='profile'; renderOnboarding();">Tiếp tục</button>
+    </div>`;
+  } else if(obStep==='profile'){
+    wrap.innerHTML = `<div class="ob-card">
+      <h2 style="margin-bottom:18px;">Tạo hồ sơ của bạn</h2>
+      <div class="card">
+        <div class="field"><label>Tên hiển thị (nickname)</label><input type="text" id="obNickname" placeholder="Ví dụ: Minh Xanh"></div>
+        <div class="field"><label>Bạn thuộc nhóm nào?</label>
+          <select id="obGroup"><option>Học sinh THCS</option><option>Học sinh THPT</option><option>Sinh viên</option><option>Khác</option></select>
+        </div>
+        <div class="field"><label>Nhận thông báo nhắc nhở?</label>
+          <div class="chip-grid"><button class="chip selected" id="notifYes" onclick="setObNotif(true)">Có</button><button class="chip" id="notifNo" onclick="setObNotif(false)">Không</button></div>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-block" style="margin-top:16px;" onclick="submitProfile()">Tiếp tục</button>
+    </div>`;
+  }
+}
+let obNotif = true;
+function setObNotif(v){ obNotif=v; document.getElementById('notifYes').classList.toggle('selected',v); document.getElementById('notifNo').classList.toggle('selected',!v); }
+function submitProfile(){
+  const nickname = document.getElementById('obNickname').value.trim();
+  const userGroup = document.getElementById('obGroup').value;
+  if(!nickname){ toast('Vui lòng nhập tên hiển thị.', '⚠️'); return; }
+  state.profile = {id:uid(), nickname, userGroup, goals:[], notif:{enabled:obNotif, time:'08:00'}, createdAt:new Date().toISOString()};
+  persist('profile');
+  startSurvey('initial');
+}
+function renderGoalPicker(){
+  uiState.tempGoals = [];
+  const wrap = document.getElementById('onboarding');
+  wrap.innerHTML = `<div class="ob-card">
+    <h2 style="margin-bottom:6px;">Chọn mục tiêu cá nhân</h2>
+    <p style="font-size:13.5px;margin-bottom:16px;">Chọn tối đa 3 mục tiêu bạn muốn tập trung — bạn có thể thay đổi bất cứ lúc nào trong Hồ sơ.</p>
+    <div class="chip-grid" id="goalPickGrid">${GOALS.map(g=>`<button class="chip" data-id="${g.id}" onclick="pickGoal('${g.id}')">${g.name}<small>${g.desc}</small></button>`).join('')}</div>
+    <button class="btn btn-primary btn-block" style="margin-top:18px;" onclick="finishGoals()">Vào Dashboard</button>
+  </div>`;
+}
+function pickGoal(id){
+  const i = uiState.tempGoals.indexOf(id);
+  if(i>=0) uiState.tempGoals.splice(i,1);
+  else { if(uiState.tempGoals.length>=3){ toast('Chỉ chọn tối đa 3 mục tiêu.', '⚠️'); return; } uiState.tempGoals.push(id); }
+  document.querySelectorAll('#goalPickGrid .chip').forEach(el=>el.classList.toggle('selected', uiState.tempGoals.includes(el.dataset.id)));
+}
+function finishGoals(){
+  if(!uiState.tempGoals.length){ toast('Hãy chọn ít nhất 1 mục tiêu.', '⚠️'); return; }
+  state.profile.goals = uiState.tempGoals;
+  persist('profile');
+  document.getElementById('onboarding').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  toast('Chào mừng đến với EcoReminder!', '🎉');
+  switchTab('home');
+}
+
+/* =========================================================================
+   REMINDERS (in-app simulation — no backend / push)
+   ========================================================================= */
+function maybeShowReminder(){
+  if(!state.settings.notifEnabled) return;
+  const t = todayStr();
+  if(state.settings.notifShownDate===t) return;
+  const hour = new Date().getHours();
+  let msg;
+  if(hour<11) msg='Bạn đã chuẩn bị bình nước chưa?';
+  else if(hour<14) msg='Nếu có thể, hãy dùng hộp hoặc dụng cụ cá nhân khi ăn trưa nhé.';
+  else if(hour<18) msg='Bạn đã phân loại rác hôm nay chưa?';
+  else msg='Hôm nay bạn đã thực hiện hành động xanh nào?';
+  toast(msg, '🔔');
+  state.settings.notifShownDate = t;
+  persist('settings');
+}
+
+/* =========================================================================
+   MAIN RENDER / INIT
+   ========================================================================= */
+function render(){
+  renderNav();
+  renderCurrentView();
+}
+function boot(){
+  applyTheme();
+  if(!state.profile){
+    document.getElementById('app').classList.add('hidden');
+    document.getElementById('onboarding').classList.remove('hidden');
+    renderOnboarding();
+  } else {
+    document.getElementById('onboarding').classList.add('hidden');
+    document.getElementById('app').classList.remove('hidden');
+    _lastLevelName = levelOf(state.points.total).name;
+    switchTab('home');
+    setTimeout(maybeShowReminder, 800);
+  }
+  document.getElementById('themeToggle').addEventListener('click', ()=>{
+    const cur = document.body.classList.contains('dark')?'dark':'light';
+    setTheme(cur==='dark'?'light':'dark');
+  });
+}
+window.addEventListener('DOMContentLoaded', boot);
+</script>
+</body>
+</html>
