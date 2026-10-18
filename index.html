@@ -1986,7 +1986,18 @@ function surveyNext(){
 }
 function finishSurvey(){
   const scores = computeSurveyScores(uiState.surveyAnswers);
-  const record = {answers:uiState.surveyAnswers, ...scores, completedAt:new Date().toISOString()};
+  const record = {
+    userId: currentUser ? currentUser.uid : "anonymous",
+    email: currentUser && !currentUser.isAnonymous ? currentUser.email : "Ẩn danh",
+    nickname: state.profile ? state.profile.nickname : "Người dùng",
+    answers: uiState.surveyAnswers,
+    ...scores,
+    completedAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+
+  const colName = uiState.surveyMode === 'initial' ? 'surveys_initial' : 'surveys_post';
+  db.collection(colName).add(record).catch(e => console.error("Lỗi lưu Firestore:", e));
+
   if(uiState.surveyMode==='initial'){
     state.surveyInitial = record;
     persist('surveyInitial');
@@ -2002,7 +2013,7 @@ function finishSurvey(){
   }
   document.getElementById('onboarding').classList.add('hidden');
   document.getElementById('app').classList.remove('hidden');
-  toast('Cảm ơn bạn đã hoàn thành khảo sát!', '🎉');
+  toast('Cảm ơn bạn đã hoàn thành khảo sát và lưu dữ liệu!', '🎉');
   switchTab(uiState.surveyMode==='initial'?'home':'progress');
 }
 
