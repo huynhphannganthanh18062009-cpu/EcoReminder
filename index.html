@@ -1890,12 +1890,13 @@ function startSurvey(mode){
   uiState.surveySteps = mode==='initial' ? SURVEY_STEPS : POST_STEPS;
   document.getElementById('app').classList.add('hidden');
   document.getElementById('onboarding').classList.remove('hidden');
-  renderSurveyStep();
+  renderSurveyStep(true);
 }
 function surveyProgressPct(){
   return Math.round((uiState.surveyStepIdx/uiState.surveySteps.length)*100);
 }
-function renderSurveyStep(){
+function renderSurveyStep(scrollTop){
+  const savedY = window.scrollY; // nhớ vị trí cuộn hiện tại
   const wrap = document.getElementById('onboarding');
   const step = uiState.surveySteps[uiState.surveyStepIdx];
   let body = '';
@@ -1948,7 +1949,7 @@ function renderSurveyStep(){
       </div>
     </div>
   `;
-  window.scrollTo(0,0);
+  window.scrollTo(0, scrollTop ? 0 : savedY); // chỉ cuộn lên đầu khi đổi bước
 }
 function setBgAnswer(qi, oi){ uiState.surveyAnswers['bg_'+qi]=oi; renderSurveyStep(); }
 function setLikert(key, val){ uiState.surveyAnswers[key]=val; renderSurveyStep(); }
@@ -1975,12 +1976,12 @@ function surveyBack(){
     render();
     return;
   }
-  uiState.surveyStepIdx--; renderSurveyStep();
+  uiState.surveyStepIdx--; renderSurveyStep(true);
 }
 function surveyNext(){
   const step = uiState.surveySteps[uiState.surveyStepIdx];
   if(!stepIsComplete(step)){ toast('Vui lòng trả lời đầy đủ các câu trước khi tiếp tục.', '⚠️'); return; }
-  if(uiState.surveyStepIdx < uiState.surveySteps.length-1){ uiState.surveyStepIdx++; renderSurveyStep(); }
+  if(uiState.surveyStepIdx < uiState.surveySteps.length-1){ uiState.surveyStepIdx++; renderSurveyStep(true); }
   else finishSurvey();
 }
 function finishSurvey(){
